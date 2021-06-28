@@ -68,7 +68,7 @@ xaringanExtra::use_panelset()
 ```
 
 `r automagic_tabs(input_data = nest_data, panel_name = "id", .output = "ts_plots",
-                  .layout = "l-page", fig.heigth=1, fig.width=10)`
+                  .layout = "l-page", fig.heigth=1, fig.width=10, echo = FALSE)`
 
 
 # Goals 📝
@@ -149,7 +149,7 @@ xaringanExtra::use_panelset()
 ```
 
 `r automagic_tabs(input_data = nest_data, panel_name = "id", .output = "ts_plots",
-                  .layout = "l-page", fig.heigth=1, fig.width=10)`
+                  .layout = "l-page", fig.heigth=1, fig.width=10, echo = FALSE)`
                   
 
 ## Workflow Generation 💻
@@ -231,6 +231,17 @@ tune_results <- tune_grid(
 )
 ```
 
+```{r, eval=FALSE}
+set.seed(1234)
+tune_results <- tune_grid(
+    object     = wflw,
+    resamples  = m4_resamples,
+    param_info = parameters(wflw),
+    grid       = 5,
+    control    = control_grid(verbose = TRUE, allow_par = TRUE, parallel_over = "everything")
+)
+```
+
 
 Finally, we select the best one based on the rmse metric as follows and finalize the workflow with the selected parameters. Once this is done, we train the entire workflow on the training data.
 
@@ -286,7 +297,7 @@ xaringanExtra::use_panelset()
 ```
 
 `r automagic_tabs(input_data = nested_data, panel_name = "id", .output = "ts_plots",
-                  .layout = "l-page", fig.heigth=1, fig.width=10)`
+                  .layout = "l-page", fig.heigth=1, fig.width=10, echo=FALSE)`
 
 
 
@@ -326,7 +337,7 @@ xaringanExtra::use_panelset()
 ```
 
 `r automagic_tabs(input_data = nested_data, panel_name = "id", .output = "ts_plots",
-                  .layout = "l-page", fig.heigth=1, fig.width=10)`
+                  .layout = "l-page", fig.heigth=1, fig.width=10, echo=FALSE)`
                   
 
 ## Acknowledgments 👏
