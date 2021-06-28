@@ -1,0 +1,670 @@
+---
+title: "Why you should learn purrr"
+author: "Alberto Almuiña"
+date: '2021-03-11T21:13:14-05:00'
+description: An introduction to functional programming with `purrr`
+slug: purrr
+tags:
+- purrr
+- functional programming
+categories: 
+- tidyverse
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<div id="why-should-you-learn-to-use-purrr" class="section level2">
+<h2>Why should you learn to use purrr?</h2>
+<p>According to the description of the package on its official page, “purrr improves R’s set of functional programming (FP) tools by providing a complete and consistent set of tools for working with functions and vectors”.</p>
+<p>But then what is a functional programming language? As Hadley explains in <a href="https://adv-r.hadley.nz/fp.html">Advanced R</a>, there are many definitions that make a language functional, although we can find two characteristics common to all of them:</p>
+<ul>
+<li><p><em>First-class functions:</em> This means that the functions behave like any other structure. That is, you can store it in a variable, store them in lists, pass them as arguments to other functions, create them inside other functions, or even return them as a result of a function.</p></li>
+<li><p>Many functional languages also require <em>pure functions</em>. A function is considered pure if it satisfies the following two characteristics:</p>
+<ol style="list-style-type: decimal">
+<li><p>The output only depends on the input arguments, so if you call the function with the same arguments, you will get the same result. Functions like <code>run.if ()</code> or <code>read.csv ()</code> are not pure.</p></li>
+<li><p>The function has no side effects like changing the value of a global variable or writing to disk. Functions like <code>print ()</code> or <code>&lt;-</code> are not pure.</p></li>
+</ol></li>
+</ul>
+<p>Strictly speaking, R is not a functional language because it does not require you to write pure functions. However, in parts of your code you can adopt a functional style and in fact you should. But what is a functional style? A functional style consists of breaking down a large problem into smaller pieces and solving each of those pieces from a function or a set of functions. What is achieved is to decompose the problem into isolated functions that operate independently and that are easier to understand. There are three techniques to break the problem down into smaller pieces:</p>
+<ul>
+<li><p><em>Functionals</em> are functions that take a function as an argument that solves the problem for a single input and generalizes it to handle any number of inputs. An example would be the <code>lapply()</code> function.</p></li>
+<li><p>Function factories: functions that create other functions.</p></li>
+<li><p>Function operators: functions that take a function as an argument and return another function as output.</p></li>
+</ul>
+<p>In this post we will focus on the functionals through the <code>purrr</code> package.</p>
+</div>
+<div id="functionals-with-purrr" class="section level2">
+<h2>Functionals with <code>purrr</code></h2>
+<p>A functional is a function that takes a function as input and returns a vector as output (or at least that was the idea in the beginning, currently the output is modulable according to the type of functional. In this way, we can obtain functionalities that return us a list, others that return a vector or a data frame). The fundamental functional in purrr is <code>map()</code>, which receives as arguments a vector, a list or a data frame and a function and applies this function to each element of the vector, list or data frame and returns the result in a list. To have a better intuition, let’s see an image:</p>
+<div class="figure">
+<img src="/img/purrr_files/map.PNG" alt="" />
+<p class="caption">Source: Advanced R</p>
+</div>
+<p>What happens is the following:</p>
+<ul>
+<li><p>If the input argument is a vector, <code>purrr::map()</code> will apply the function passed as an argument to each element of the vector.</p></li>
+<li><p>If the input argument is a list, then map() will apply the function passed as an argument to each element of the list.</p></li>
+<li><p>On the contrary, if the input argument is a data frame, then map() will apply the function to each column of it.</p></li>
+</ul>
+<p>Let’s look at a simple example:</p>
+<pre class="r"><code>library(purrr)
+library(tidyverse)
+
+double &lt;- function(x) x*2
+
+purrr::map(c(1:3), double)</code></pre>
+<pre><code>## [[1]]
+## [1] 2
+## 
+## [[2]]
+## [1] 4
+## 
+## [[3]]
+## [1] 6</code></pre>
+<pre class="r"><code>purrr::map(list(2, 4, 10), double)</code></pre>
+<pre><code>## [[1]]
+## [1] 4
+## 
+## [[2]]
+## [1] 8
+## 
+## [[3]]
+## [1] 20</code></pre>
+<p>We must bear in mind that <code>purrr::map</code> always returns a list, but sometimes this is not the most comfortable or practical. If we know in advance the output we want, we can use any of the map variants (there are more than those shown in the following example, I recommend that you explore the existing options by typing <code>map_</code>):</p>
+<pre class="r"><code>purrr::map_dbl(c(1:3), double)</code></pre>
+<pre><code>## [1] 2 4 6</code></pre>
+<pre class="r"><code>purrr::map_chr(c(1:3), double)</code></pre>
+<pre><code>## [1] &quot;2.000000&quot; &quot;4.000000&quot; &quot;6.000000&quot;</code></pre>
+<pre class="r"><code>purrr::map_lgl(c(1:3), is.na)</code></pre>
+<pre><code>## [1] FALSE FALSE FALSE</code></pre>
+<p>Another option is to use anonymous functions as a parameter, as follows:</p>
+<pre class="r"><code>purrr::map(c(1:3), function(x) x*2)</code></pre>
+<pre><code>## [[1]]
+## [1] 2
+## 
+## [[2]]
+## [1] 4
+## 
+## [[3]]
+## [1] 6</code></pre>
+<p>Even if you don’t feel like typing so much, purrr offers a shortcut so you can write your anonymous functions as follows:</p>
+<pre class="r"><code>purrr::map(c(1:3), ~{.x*2})</code></pre>
+<pre><code>## [[1]]
+## [1] 2
+## 
+## [[2]]
+## [1] 4
+## 
+## [[3]]
+## [1] 6</code></pre>
+<p>To understand what is happening, we are going to make use of the <code>purrr::as_mapper()</code> function:</p>
+<pre class="r"><code>purrr::as_mapper(~{.x*2})</code></pre>
+<pre><code>## &lt;lambda&gt;
+## function (..., .x = ..1, .y = ..2, . = ..1) 
+## {
+##     .x * 2
+## }
+## attr(,&quot;class&quot;)
+## [1] &quot;rlang_lambda_function&quot; &quot;function&quot;</code></pre>
+<p>The function arguments seem a bit strange but they allow you to refer to <code>.</code> for one argument functions, to<code>.x .y</code> for two argument functions and to <code>..1, ..2, ..3 etc.</code>for a function with an arbitrary number of arguments. <code>.</code> remains for compatibility but is not recommended for use.</p>
+<p>To use additional arguments of a function, there are two ways to do it: the first is through an anonymous function:</p>
+<pre class="r"><code>purrr::map_dbl(list(1:5, c(1, 4, NA)), 
+               ~ mean(.x, na.rm = TRUE))</code></pre>
+<pre><code>## [1] 3.0 2.5</code></pre>
+<p>The second is to use the arguments after the function itself. This happens because the arguments are passed to the function through the argument <code>...</code>. As an image is worth a thousand words, let’s better see it graphically:</p>
+<div class="figure">
+<img src="/img/purrr_files/map_args.PNG" alt="" />
+<p class="caption">Source: Advanced R</p>
+</div>
+<pre class="r"><code>purrr::map_dbl(list(1:5, c(1, 4, NA)),
+               mean, na.rm = TRUE)</code></pre>
+<pre><code>## [1] 3.0 2.5</code></pre>
+<p>These are the foundations from which you can start using the purrr functionalities in a safe way. The move to functionals that iterate over multiple arguments as input rather than one (that is, the move to generalization) is trivial, as we will see below.</p>
+</div>
+<div id="map-variants" class="section level2">
+<h2>map variants</h2>
+<p><code>purrr</code> offers us a lot of versatility when it comes to iterating and for this it offers us another set of functions whose objective is to take a function as input and apply it to each pair of extracted elements, either from two vectors, or from two lists. The basic function of this set of functions is <code>purrr::map2()</code>, which, analogously to map(), will always return a list. To understand it better, let’s go with a very simple example. Let’s try to add two vectors element by element:</p>
+<pre class="r"><code>a &lt;- c(1, 2, 3)
+b &lt;- c(1, 2, 3)
+
+add &lt;- function(x, y) {x+y}
+
+purrr::map2(a, b, add)</code></pre>
+<pre><code>## [[1]]
+## [1] 2
+## 
+## [[2]]
+## [1] 4
+## 
+## [[3]]
+## [1] 6</code></pre>
+<p>A bit cumbersome right? Yes! We are going to apply everything we learned in the previous sections. First, we can return a vector if we know the type we want to return, in this case ‘double’, simply by using the variants of the basic function with <code>map2_* desired-type*</code>:</p>
+<pre class="r"><code>a &lt;- c(1, 2, 3)
+b &lt;- c(1, 2, 3)
+
+add &lt;- function(x, y) {x+y}
+
+purrr::map2_dbl(a, b, add)</code></pre>
+<pre><code>## [1] 2 4 6</code></pre>
+<p>This is all? No, remember that we can use anonymous functions so as not to write so much code, when we use such short functions:</p>
+<pre class="r"><code>purrr::map2_dbl(1:3, 1:3, ~{.x +.y})</code></pre>
+<pre><code>## [1] 2 4 6</code></pre>
+<p>The next step in generalization would be the use of the <code>purrr::pmap()</code> function, although possibly by now you already intuit how this function works, right? The idea here is to pass a list as an argument that contains inside X vectors, lists or data frames on which the function passed as an argument will be applied. To do this, let’s imagine that I want to add the elements of three vectors, the generalization of the previous example:</p>
+<pre class="r"><code>a &lt;- c(1, 2, 3)
+b &lt;- c(1, 2, 3)
+c &lt;- c(1 ,2, 3)
+
+add &lt;- function(x, y, z) {x + y + z}
+
+purrr::pmap(list(a, b, c), add)</code></pre>
+<pre><code>## [[1]]
+## [1] 3
+## 
+## [[2]]
+## [1] 6
+## 
+## [[3]]
+## [1] 9</code></pre>
+<p>Now it is only a matter of simplifying applying the same logic as up to now, selecting the <em>pmap_</em> function that returns the result with the format we want and using an anonymous function to make it less cumbersome (remember that when there were more than two arguments, the correct syntax within the anonymous function was <em>.. 1, ..2, ..3, ..4 etc</em> to identify the corresponding arguments):</p>
+<pre class="r"><code>a &lt;- c(1, 2, 3)
+b &lt;- c(1, 2, 3)
+c &lt;- c(1 ,2, 3)
+
+purrr::pmap_dbl(list(a, b, c), ~{..1 + ..2 + ..3})</code></pre>
+<pre><code>## [1] 3 6 9</code></pre>
+<p>Another very interesting set of functions are <code>purrr::walk()</code> and its variants (walk2, pwalk). These functions are born because sometimes we are not interested in the function returning a result, but in the side effects that the function produces. This is the case for functions like print(), message(), plot() or write.csv(). When we use this type of function with <code>purrr::map()</code> we not only get the desired side effect, but we also get a list with null values. Let’s look at the following example:</p>
+<pre class="r"><code>saludar &lt;- function(.nombre) {message(paste(&#39;Hi &#39;, .nombre))}
+nombres &lt;- c(&#39;Alberto&#39;, &#39;Diana&#39;)
+
+purrr::map(nombres, saludar)</code></pre>
+<pre><code>## Hi  Alberto</code></pre>
+<pre><code>## Hi  Diana</code></pre>
+<pre><code>## [[1]]
+## NULL
+## 
+## [[2]]
+## NULL</code></pre>
+<p>Our interest is in printing the message, but we don’t want to get any results back, and this is where <code>walk()</code> comes in. This function basically what it does internally is call the <em>map</em> function and return the results invisibly:</p>
+<div class="figure">
+<img src="/img/purrr_files/walk.PNG" alt="" />
+<p class="caption">Source: Advanced R</p>
+</div>
+<pre class="r"><code>body(walk)</code></pre>
+<pre><code>## {
+##     map(.x, .f, ...)
+##     invisible(.x)
+## }</code></pre>
+<pre class="r"><code>purrr::walk(nombres, saludar)</code></pre>
+<pre><code>## Hi  Alberto</code></pre>
+<pre><code>## Hi  Diana</code></pre>
+<p>Another very common use case is when we want to save several files to disk in several paths. For this we will use the <code>purrr:walk2()</code> function, which will take as arguments the data frames to be saved, the routes and the function that will be in charge of carrying out this task:</p>
+<pre class="r"><code>temp &lt;- tempfile()
+dir.create(temp)
+
+cyls &lt;- split(mtcars, mtcars$cyl)
+paths &lt;- file.path(temp, paste0(&quot;cyl-&quot;, names(cyls), &quot;.csv&quot;))
+
+purrr::walk2(cyls, paths, write.csv)
+
+dir(temp)</code></pre>
+<pre><code>## [1] &quot;cyl-4.csv&quot; &quot;cyl-6.csv&quot; &quot;cyl-8.csv&quot;</code></pre>
+<p>Basically what is happening when we call walk2 is the following: write.csv(cyls [[1]], paths [[1]]), write.csv(cyls [[2]], paths [[2]] ), write.csv(cyls [[3]], paths [[3]]).</p>
+<p>Another very interesting function is <code>purrr::modify()</code>, which works like map() but guarantees that the output of your function will have the same type as your input. This means that if your input is a vector, your output will be too. If your input is a data frame, your output will be too. Let’s see an example:</p>
+<pre class="r"><code>purrr::modify(c(1, 2, 3), ~ .x * 2)</code></pre>
+<pre><code>## [1] 2 4 6</code></pre>
+<pre class="r"><code>purrr::modify(list(1, 2, 3), ~ .x * 2)</code></pre>
+<pre><code>## [[1]]
+## [1] 2
+## 
+## [[2]]
+## [1] 4
+## 
+## [[3]]
+## [1] 6</code></pre>
+<pre class="r"><code>purrr::modify(data.frame(valor = c(1, 2, 3)), ~ .x * 2)</code></pre>
+<pre><code>##   valor
+## 1     2
+## 2     4
+## 3     6</code></pre>
+</div>
+<div id="practical-example-star-wars-planets" class="section level2">
+<h2>Practical Example: Star Wars Planets</h2>
+<p>To delve further into the <code>purrr</code> universe, let’s see how we could use what we learned and other additional features from the package to explore a list containing information on 61 planets from the Star Wars saga. We will first see the information about the first planet to know what information we can find:</p>
+<pre class="r"><code>library(repurrrsive)</code></pre>
+<pre><code>## Warning: package &#39;repurrrsive&#39; was built under R version 4.0.4</code></pre>
+<pre class="r"><code>planets&lt;-repurrrsive::sw_planets
+planets[[1]]</code></pre>
+<pre><code>## $name
+## [1] &quot;Alderaan&quot;
+## 
+## $rotation_period
+## [1] &quot;24&quot;
+## 
+## $orbital_period
+## [1] &quot;364&quot;
+## 
+## $diameter
+## [1] &quot;12500&quot;
+## 
+## $climate
+## [1] &quot;temperate&quot;
+## 
+## $gravity
+## [1] &quot;1 standard&quot;
+## 
+## $terrain
+## [1] &quot;grasslands, mountains&quot;
+## 
+## $surface_water
+## [1] &quot;40&quot;
+## 
+## $population
+## [1] &quot;2000000000&quot;
+## 
+## $residents
+## [1] &quot;http://swapi.co/api/people/5/&quot;  &quot;http://swapi.co/api/people/68/&quot;
+## [3] &quot;http://swapi.co/api/people/81/&quot;
+## 
+## $films
+## [1] &quot;http://swapi.co/api/films/6/&quot; &quot;http://swapi.co/api/films/1/&quot;
+## 
+## $created
+## [1] &quot;2014-12-10T11:35:48.479000Z&quot;
+## 
+## $edited
+## [1] &quot;2014-12-20T20:58:18.420000Z&quot;
+## 
+## $url
+## [1] &quot;http://swapi.co/api/planets/2/&quot;</code></pre>
+<p>An advantage of purrr is that it is pipe-friendly, so we can use its functionals with the famous magritrr pipe. For example, let’s see what are the names of the 61 planets in Star Wars:</p>
+<pre class="r"><code>planets %&gt;% purrr::map_chr(~.$name)</code></pre>
+<pre><code>##  [1] &quot;Alderaan&quot;       &quot;Yavin IV&quot;       &quot;Hoth&quot;           &quot;Dagobah&quot;       
+##  [5] &quot;Bespin&quot;         &quot;Endor&quot;          &quot;Naboo&quot;          &quot;Coruscant&quot;     
+##  [9] &quot;Kamino&quot;         &quot;Geonosis&quot;       &quot;Utapau&quot;         &quot;Mustafar&quot;      
+## [13] &quot;Kashyyyk&quot;       &quot;Polis Massa&quot;    &quot;Mygeeto&quot;        &quot;Felucia&quot;       
+## [17] &quot;Cato Neimoidia&quot; &quot;Saleucami&quot;      &quot;Stewjon&quot;        &quot;Eriadu&quot;        
+## [21] &quot;Corellia&quot;       &quot;Rodia&quot;          &quot;Nal Hutta&quot;      &quot;Dantooine&quot;     
+## [25] &quot;Bestine IV&quot;     &quot;Ord Mantell&quot;    &quot;unknown&quot;        &quot;Trandosha&quot;     
+## [29] &quot;Socorro&quot;        &quot;Mon Cala&quot;       &quot;Chandrila&quot;      &quot;Sullust&quot;       
+## [33] &quot;Toydaria&quot;       &quot;Malastare&quot;      &quot;Dathomir&quot;       &quot;Ryloth&quot;        
+## [37] &quot;Aleen Minor&quot;    &quot;Vulpter&quot;        &quot;Troiken&quot;        &quot;Tund&quot;          
+## [41] &quot;Haruun Kal&quot;     &quot;Cerea&quot;          &quot;Glee Anselm&quot;    &quot;Iridonia&quot;      
+## [45] &quot;Tholoth&quot;        &quot;Iktotch&quot;        &quot;Quermia&quot;        &quot;Dorin&quot;         
+## [49] &quot;Champala&quot;       &quot;Mirial&quot;         &quot;Serenno&quot;        &quot;Concord Dawn&quot;  
+## [53] &quot;Zolan&quot;          &quot;Ojom&quot;           &quot;Skako&quot;          &quot;Muunilinst&quot;    
+## [57] &quot;Shili&quot;          &quot;Kalee&quot;          &quot;Umbara&quot;         &quot;Tatooine&quot;      
+## [61] &quot;Jakku&quot;</code></pre>
+<p>As you can see, with purrr we can also extract elements from a list or object on which we will iterate in a simple way! Let’s make things a little more complicated. Let’s count the number of characters in each name:</p>
+<pre class="r"><code>planets %&gt;% purrr::map_chr(~.$name) %&gt;% purrr::map_int(~str_length(.x))</code></pre>
+<pre><code>##  [1]  8  8  4  7  6  5  5  9  6  8  6  8  8 11  7  7 14  9  7  6  8  5  9  9 10
+## [26] 11  7  9  7  8  9  7  8  9  8  6 11  7  7  4 10  5 11  8  7  7  7  5  8  6
+## [51]  7 12  5  4  5 10  5  5  6  8  5</code></pre>
+<p>And if now I want to keep those that contain more than 10 characters? Of course! purrr offers two functions, <code>keep</code> and<code>discard</code> that precisely allow us to select or discard elements based on a predicate:</p>
+<pre class="r"><code>planets %&gt;% purrr::map_chr(~.$name) %&gt;% purrr::map_int(~str_length(.x)) %&gt;% purrr::keep(~ .x &gt; 8)</code></pre>
+<pre><code>##  [1]  9 11 14  9  9  9 10 11  9  9  9 11 10 11 12 10</code></pre>
+<p>Although you can also directly filter the list and keep the elements that interest you. What does this mean? That I want to keep the planets on the list whose names are longer than 8 characters. Let’s do it:</p>
+<pre class="r"><code>lista_reducida &lt;- planets %&gt;% purrr::keep(~str_length(.$name)&gt;8)
+
+length(lista_reducida)</code></pre>
+<pre><code>## [1] 16</code></pre>
+<p>Another interesting function is <code>pluck</code>, which allows you to flexibly extract elements from a list. In this case we simply extract the first element:</p>
+<pre class="r"><code>lista_reducida %&gt;% purrr::pluck(1) #same as lista_reducida[[1]]</code></pre>
+<pre><code>## $name
+## [1] &quot;Coruscant&quot;
+## 
+## $rotation_period
+## [1] &quot;24&quot;
+## 
+## $orbital_period
+## [1] &quot;368&quot;
+## 
+## $diameter
+## [1] &quot;12240&quot;
+## 
+## $climate
+## [1] &quot;temperate&quot;
+## 
+## $gravity
+## [1] &quot;1 standard&quot;
+## 
+## $terrain
+## [1] &quot;cityscape, mountains&quot;
+## 
+## $surface_water
+## [1] &quot;unknown&quot;
+## 
+## $population
+## [1] &quot;1000000000000&quot;
+## 
+## $residents
+## [1] &quot;http://swapi.co/api/people/34/&quot; &quot;http://swapi.co/api/people/55/&quot;
+## [3] &quot;http://swapi.co/api/people/74/&quot;
+## 
+## $films
+## [1] &quot;http://swapi.co/api/films/5/&quot; &quot;http://swapi.co/api/films/4/&quot;
+## [3] &quot;http://swapi.co/api/films/6/&quot; &quot;http://swapi.co/api/films/3/&quot;
+## 
+## $created
+## [1] &quot;2014-12-10T11:54:13.921000Z&quot;
+## 
+## $edited
+## [1] &quot;2014-12-20T20:58:18.432000Z&quot;
+## 
+## $url
+## [1] &quot;http://swapi.co/api/planets/9/&quot;</code></pre>
+<p>Other very interesting functions are <code>partial()</code> and <code>compose()</code>. partial() allows you to modify a function to assign values to the parameters that interest you, while compose allows you to concatenate several functions so that they are executed in a certain order. Let’s see an example of how to apply these functions. We are going to take the terrain field and we are going to replace the commas with hyphens and then we will put the characters in title format (the first letter of each word in uppercase):</p>
+<pre class="r"><code>string_replace &lt;- purrr::partial(str_replace_all, pattern = &#39;,&#39;, replacement = &#39;-&#39;)
+
+.f &lt;- purrr::compose(str_to_title, string_replace)
+
+planets %&gt;% purrr::map_chr(~.$terrain) %&gt;% purrr::map_chr(.f)</code></pre>
+<pre><code>##  [1] &quot;Grasslands- Mountains&quot;                   
+##  [2] &quot;Jungle- Rainforests&quot;                     
+##  [3] &quot;Tundra- Ice Caves- Mountain Ranges&quot;      
+##  [4] &quot;Swamp- Jungles&quot;                          
+##  [5] &quot;Gas Giant&quot;                               
+##  [6] &quot;Forests- Mountains- Lakes&quot;               
+##  [7] &quot;Grassy Hills- Swamps- Forests- Mountains&quot;
+##  [8] &quot;Cityscape- Mountains&quot;                    
+##  [9] &quot;Ocean&quot;                                   
+## [10] &quot;Rock- Desert- Mountain- Barren&quot;          
+## [11] &quot;Scrublands- Savanna- Canyons- Sinkholes&quot; 
+## [12] &quot;Volcanoes- Lava Rivers- Mountains- Caves&quot;
+## [13] &quot;Jungle- Forests- Lakes- Rivers&quot;          
+## [14] &quot;Airless Asteroid&quot;                        
+## [15] &quot;Glaciers- Mountains- Ice Canyons&quot;        
+## [16] &quot;Fungus Forests&quot;                          
+## [17] &quot;Mountains- Fields- Forests- Rock Arches&quot; 
+## [18] &quot;Caves- Desert- Mountains- Volcanoes&quot;     
+## [19] &quot;Grass&quot;                                   
+## [20] &quot;Cityscape&quot;                               
+## [21] &quot;Plains- Urban- Hills- Forests&quot;           
+## [22] &quot;Jungles- Oceans- Urban- Swamps&quot;          
+## [23] &quot;Urban- Oceans- Swamps- Bogs&quot;             
+## [24] &quot;Oceans- Savannas- Mountains- Grasslands&quot; 
+## [25] &quot;Rocky Islands- Oceans&quot;                   
+## [26] &quot;Plains- Seas- Mesas&quot;                     
+## [27] &quot;Unknown&quot;                                 
+## [28] &quot;Mountains- Seas- Grasslands- Deserts&quot;    
+## [29] &quot;Deserts- Mountains&quot;                      
+## [30] &quot;Oceans- Reefs- Islands&quot;                  
+## [31] &quot;Plains- Forests&quot;                         
+## [32] &quot;Mountains- Volcanoes- Rocky Deserts&quot;     
+## [33] &quot;Swamps- Lakes&quot;                           
+## [34] &quot;Swamps- Deserts- Jungles- Mountains&quot;     
+## [35] &quot;Forests- Deserts- Savannas&quot;              
+## [36] &quot;Mountains- Valleys- Deserts- Tundra&quot;     
+## [37] &quot;Unknown&quot;                                 
+## [38] &quot;Urban- Barren&quot;                           
+## [39] &quot;Desert- Tundra- Rainforests- Mountains&quot;  
+## [40] &quot;Barren- Ash&quot;                             
+## [41] &quot;Toxic Cloudsea- Plateaus- Volcanoes&quot;     
+## [42] &quot;Verdant&quot;                                 
+## [43] &quot;Lakes- Islands- Swamps- Seas&quot;            
+## [44] &quot;Rocky Canyons- Acid Pools&quot;               
+## [45] &quot;Unknown&quot;                                 
+## [46] &quot;Rocky&quot;                                   
+## [47] &quot;Unknown&quot;                                 
+## [48] &quot;Unknown&quot;                                 
+## [49] &quot;Oceans- Rainforests- Plateaus&quot;           
+## [50] &quot;Deserts&quot;                                 
+## [51] &quot;Rainforests- Rivers- Mountains&quot;          
+## [52] &quot;Jungles- Forests- Deserts&quot;               
+## [53] &quot;Unknown&quot;                                 
+## [54] &quot;Oceans- Glaciers&quot;                        
+## [55] &quot;Urban- Vines&quot;                            
+## [56] &quot;Plains- Forests- Hills- Mountains&quot;       
+## [57] &quot;Cities- Savannahs- Seas- Plains&quot;         
+## [58] &quot;Rainforests- Cliffs- Canyons- Seas&quot;      
+## [59] &quot;Unknown&quot;                                 
+## [60] &quot;Desert&quot;                                  
+## [61] &quot;Deserts&quot;</code></pre>
+</div>
+<div id="practical-example-nested-gapminder" class="section level2">
+<h2>Practical Example: Nested Gapminder</h2>
+<p>Finally, we are going to see a practical example of how to combine a nested dataset with the <code>purrr</code> functionals to exploit all the power of both solutions. But first of all, what is a nested data frame? Basically, it is a data frame that has one or more columns made up of lists of data frames. To make the concept clear, let’s look at an example:</p>
+<pre class="r"><code>(gap_nested &lt;- repurrrsive::gap_nested)</code></pre>
+<pre><code>## # A tibble: 142 x 3
+##    country     continent data             
+##    &lt;fct&gt;       &lt;fct&gt;     &lt;list&gt;           
+##  1 Afghanistan Asia      &lt;tibble [12 x 4]&gt;
+##  2 Albania     Europe    &lt;tibble [12 x 4]&gt;
+##  3 Algeria     Africa    &lt;tibble [12 x 4]&gt;
+##  4 Angola      Africa    &lt;tibble [12 x 4]&gt;
+##  5 Argentina   Americas  &lt;tibble [12 x 4]&gt;
+##  6 Australia   Oceania   &lt;tibble [12 x 4]&gt;
+##  7 Austria     Europe    &lt;tibble [12 x 4]&gt;
+##  8 Bahrain     Asia      &lt;tibble [12 x 4]&gt;
+##  9 Bangladesh  Asia      &lt;tibble [12 x 4]&gt;
+## 10 Belgium     Europe    &lt;tibble [12 x 4]&gt;
+## # ... with 132 more rows</code></pre>
+<p>As can be seen, we have a dataset (tibble) in which for each continent and country, in the ‘data’ column we have another dataset (tibble) stored. A good place to learn more about these types of datasets is on the <a href="https://tidyr.tidyverse.org/articles/nest.html">tidyr</a> page itself (since they are created with the tidyr::nest function). To extract the information in these tibbles in the data column, we can use the <em>pluck</em> function learned earlier. For example, let’s look at the saved data for Afghanistan:</p>
+<pre class="r"><code>gap_nested %&gt;% pluck(&#39;data&#39;, 1)</code></pre>
+<pre><code>## # A tibble: 12 x 4
+##     year lifeExp      pop gdpPercap
+##    &lt;int&gt;   &lt;dbl&gt;    &lt;int&gt;     &lt;dbl&gt;
+##  1  1952    28.8  8425333      779.
+##  2  1957    30.3  9240934      821.
+##  3  1962    32.0 10267083      853.
+##  4  1967    34.0 11537966      836.
+##  5  1972    36.1 13079460      740.
+##  6  1977    38.4 14880372      786.
+##  7  1982    39.9 12881816      978.
+##  8  1987    40.8 13867957      852.
+##  9  1992    41.7 16317921      649.
+## 10  1997    41.8 22227415      635.
+## 11  2002    42.1 25268405      727.
+## 12  2007    43.8 31889923      975.</code></pre>
+<p>One of the great advantages of this format is that it allows us to apply the purrr functionalities within the data frame itself, for example, we can apply an ARIMA model with the data of each tibble in the ‘data’ column to model the life expectancy in function of the other variables: population and per capita GDP. What we do is save the information of each model in a new column called ‘arima’:</p>
+<pre class="r"><code>library(modeltime)
+library(tidymodels)</code></pre>
+<pre><code>## -- Attaching packages -------------------------------------- tidymodels 0.1.2 --</code></pre>
+<pre><code>## v broom     0.7.2      v recipes   0.1.15
+## v dials     0.0.9      v rsample   0.0.8 
+## v infer     0.5.3      v tune      0.1.2 
+## v modeldata 0.1.0      v workflows 0.2.1 
+## v parsnip   0.1.4      v yardstick 0.0.7</code></pre>
+<pre><code>## -- Conflicts ----------------------------------------- tidymodels_conflicts() --
+## x scales::discard() masks purrr::discard()
+## x dplyr::filter()   masks stats::filter()
+## x recipes::fixed()  masks stringr::fixed()
+## x dplyr::lag()      masks stats::lag()
+## x yardstick::spec() masks readr::spec()
+## x recipes::step()   masks stats::step()</code></pre>
+<pre class="r"><code>gap_nested &lt;- gap_nested %&gt;%
+              mutate(arima = map(data, ~arima_reg(mode = &#39;regression&#39;) %&gt;%
+                                  set_engine(&#39;auto_arima&#39;) %&gt;%
+                                  fit(lifeExp ~ pop + gdpPercap + as.Date(ISOdate(year, 1, 1)), data = .x)))</code></pre>
+<pre><code>## frequency = 1 observations per 5 years</code></pre>
+<pre><code>## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years</code></pre>
+<p>Let’s see the ARIMA model selected for life expectancy in Afghanistan:</p>
+<pre class="r"><code>gap_nested %&gt;% pluck(&#39;arima&#39;, 1)</code></pre>
+<pre><code>## parsnip model object
+## 
+## Fit time:  480ms 
+## Series: outcome 
+## Regression with ARIMA(2,0,0) errors 
+## 
+## Coefficients:
+##          ar1      ar2  intercept  pop  gdp_percap
+##       1.8426  -0.8951    32.7412    0      0.0014
+## s.e.  0.0937   0.0906     1.6874    0      0.0013
+## 
+## sigma^2 estimated as 0.5101:  log likelihood=-12.82
+## AIC=37.65   AICc=54.45   BIC=40.56</code></pre>
+<p>Now we can extract the values from the model for the training period and store them in another column:</p>
+<pre class="r"><code>gap_nested &lt;- gap_nested %&gt;% 
+              mutate(fitted = map(arima, ~.$fit$models$model_1$fitted))
+
+gap_nested %&gt;% pluck(&#39;fitted&#39;, 1)</code></pre>
+<pre><code>## Time Series:
+## Start = 1 
+## End = 12 
+## Frequency = 1 
+##  [1] 29.44926 29.80294 31.99193 33.64891 35.85104 38.16024 40.12213 40.87741
+##  [9] 41.51748 42.88908 41.41370 42.97920</code></pre>
+<p>Finally, we are going to calculate the rsq for each model from the fitted values and the observed values of life expectancy. As for each country and continent we will obtain a single value, we will use the function <code>tidy::unnest()</code> at the end to be able to directly visualize this value (and that it is not nested in a list in the column ‘rsq’ that we are going to create) :</p>
+<pre class="r"><code>gap_nested &lt;- gap_nested %&gt;%
+              mutate(rsq = map2(fitted, 
+                                data, 
+                                function(.fitted, .data) {yardstick::rsq_vec(as.vector(.fitted), .data$lifeExp)})) %&gt;%
+              tidyr::unnest(rsq)
+
+gap_nested</code></pre>
+<pre><code>## # A tibble: 142 x 6
+##    country     continent data              arima    fitted      rsq
+##    &lt;fct&gt;       &lt;fct&gt;     &lt;list&gt;            &lt;list&gt;   &lt;list&gt;    &lt;dbl&gt;
+##  1 Afghanistan Asia      &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.988
+##  2 Albania     Europe    &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.938
+##  3 Algeria     Africa    &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.980
+##  4 Angola      Africa    &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.981
+##  5 Argentina   Americas  &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.995
+##  6 Australia   Oceania   &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.984
+##  7 Austria     Europe    &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.986
+##  8 Bahrain     Asia      &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.982
+##  9 Bangladesh  Asia      &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.994
+## 10 Belgium     Europe    &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.986
+## # ... with 132 more rows</code></pre>
+<p>As you can see, the combination of <code>purrr</code> and<code>tidyr::nest</code> is very powerful to find elegant and efficient solutions. This is only a sketch of what can be done with the functionals of the package, but purrr offers many more functionalities that I definitely recommend you explore. Of course, once you understand how this package works, you will hardly want to abandon it in the future.</p>
+</div>

@@ -1,0 +1,91 @@
+---
+title: "La función `reformulate()`"
+author: "Alberto Almuiña"
+date: '2020-01-17T21:13:14-05:00'
+description: Cómo almacenar una fórmula en una variable?
+slug: reformulate_es
+categories: 
+- R-tips
+tags: 
+- reformulate
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<hr />
+<div id="función-reformulate" class="section level2">
+<h2>Función <code>reformulate()</code></h2>
+<hr />
+<p>Imagine que desea crear una aplicación que impute los missing values de una determinada variable. El usuario seleccionará esta columna en un slider y podrá recopilar el valor en su server.R. Veamos un caso:</p>
+<pre class="r"><code>library(recipes)
+library(VIM)
+
+data(&quot;airquality&quot;)
+
+aggr(airquality, prop = F, combined = T, numbers = T, sortVars = T, sortCombs = T)</code></pre>
+<p><img src="/posts/2020-01-17-reformulate/reformulate.es_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<pre><code>## 
+##  Variables sorted by number of missings: 
+##  Variable Count
+##     Ozone    37
+##   Solar.R     7
+##      Wind     0
+##      Temp     0
+##     Month     0
+##       Day     0</code></pre>
+<p>Como puede ver, tenemos dos columnas con missing values. Supongamos que el usuario selecciona la columna ‘Ozone’. Vamos a utilizar el paquete <code>recipes</code> para imputar los valores con el algoritmo knn:</p>
+<pre class="r"><code>.f&lt;-&#39;Ozone ~ .&#39;
+
+airquality&lt;-recipe(.f, airquality) %&gt;% 
+            step_knnimpute(all_outcomes(), neighbors = 3) %&gt;% 
+            prep() %&gt;% 
+            juice()</code></pre>
+<pre><code>## Error: `x` should be a data frame, matrix, or tibble</code></pre>
+<p>Obtenemos un error porque la función no puede interpretar la cadena como una fórmula. Usemos la función ‘reformulate’ para crear una fórmula:</p>
+<pre class="r"><code>.f&lt;-reformulate(termlabels = &#39;.&#39;, response = &#39;Ozone&#39;)
+
+airquality&lt;-recipe(.f, airquality) %&gt;% 
+            step_knnimpute(all_outcomes(), neighbors = 3) %&gt;% 
+            prep() %&gt;% 
+            juice()
+
+aggr(airquality, prop = F, combined = T, numbers = T, sortVars = T, sortCombs = T)</code></pre>
+<p><img src="/posts/2020-01-17-reformulate/reformulate.es_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<pre><code>## 
+##  Variables sorted by number of missings: 
+##  Variable Count
+##   Solar.R     7
+##      Wind     0
+##      Temp     0
+##     Month     0
+##       Day     0
+##     Ozone     0</code></pre>
+<p>Se puede ver que ahora la función ha funcionado correctamente, como podemos ver en el gráfico, ya que solo tenemos una variable con missing values.</p>
+<hr />
+<div id="otra-opción-la-función-as.formula" class="section level3">
+<h3>Otra opción: la función <code>as.formula()</code></h3>
+<hr />
+<p>Otra opción para lograr el mismo resultado es usar la función as.formula ().</p>
+<pre class="r"><code>data(&#39;airquality&#39;)
+
+.f&lt;-as.formula(&#39;Ozone ~ .&#39;)
+
+airquality&lt;-recipe(.f, airquality) %&gt;% 
+            step_knnimpute(all_outcomes(), neighbors = 3) %&gt;% 
+            prep() %&gt;% 
+            juice()
+
+aggr(airquality, prop = F, combined = T, numbers = T, sortVars = T, sortCombs = T)</code></pre>
+<p><img src="/posts/2020-01-17-reformulate/reformulate.es_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<pre><code>## 
+##  Variables sorted by number of missings: 
+##  Variable Count
+##   Solar.R     7
+##      Wind     0
+##      Temp     0
+##     Month     0
+##       Day     0
+##     Ozone     0</code></pre>
+</div>
+</div>

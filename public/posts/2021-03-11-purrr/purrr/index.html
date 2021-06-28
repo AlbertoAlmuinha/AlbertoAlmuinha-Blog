@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head prefix="og: http://ogp.me/ns# article: http://ogp.me/ns/article#">
+    <meta charset="UTF-8" />
+
+    <meta name="generator" content="Hugo 0.81.0" /><meta name="theme-color" content="#16171d" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
+    
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+
+    <title>Why you should learn purrr | AlbertoAlmuiña</title>
+
+    <link rel="stylesheet" href="/css/meme.min.82a998858d75bc2a043de7b21539366e813410b171417d364957704fb21a9faa.css"/>
+
+    
+    
+        <script src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js" defer></script><script src="/js/meme.min.888f37ce2b3f1f54c8fe8f1531545c4d423386ed190b53628aabbb20e3476245.js"></script>
+
+    
+	
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM&#43;Plex&#43;Serif:ital,wght@0,400;0,500;0,700;1,400;1,700&amp;family=Source&#43;Code&#43;Pro:ital,wght@0,400;0,700;1,400;1,700&amp;family=Comfortaa:wght@700&amp;display=swap" media="print" onload="this.media='all'" />
+        <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM&#43;Plex&#43;Serif:ital,wght@0,400;0,500;0,700;1,400;1,700&amp;family=Source&#43;Code&#43;Pro:ital,wght@0,400;0,700;1,400;1,700&amp;family=Comfortaa:wght@700&amp;display=swap" /></noscript>
+
+    <meta name="author" content="Alberto Almuiña" /><meta name="description" content="An introduction to functional programming with `purrr`" />
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#2a6df4" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="AlbertoAlmuiña" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="AlbertoAlmuiña" />
+    <meta name="msapplication-starturl" content="../../../" />
+    <meta name="msapplication-TileColor" content="#fff" />
+    <meta name="msapplication-TileImage" content="../../../icons/mstile-150x150.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    
+    
+
+    
+    <link rel="canonical" href="https://AlbertoAlmui%C3%B1a.com/posts/2021-03-11-purrr/purrr/" />
+    
+
+<script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "datePublished": "2021-03-11T02:13:14-05:00",
+        "dateModified": "2021-06-19T05:01:26+02:00",
+        "url": "https://AlbertoAlmui%C3%B1a.com/posts/2021-03-11-purrr/purrr/",
+        "headline": "Why you should learn purrr",
+        "description": "An introduction to functional programming with `purrr`",
+        "inLanguage" : "en",
+        "articleSection": "posts",
+        "wordCount":  5050 ,
+        "image": ["https://AlbertoAlmui%C3%B1a.com/img/purrr_files/map.PNG","https://AlbertoAlmui%C3%B1a.com/img/purrr_files/map_args.PNG","https://AlbertoAlmui%C3%B1a.com/img/purrr_files/walk.PNG"],
+        "author": {
+            "@type": "Person",
+            "email": "albertogonzalezalmuinha@gmail.com",
+            "image": "https://AlbertoAlmui%C3%B1a.com/icons/apple-touch-icon.png",
+            "url": "https://albertoalmuinha.com/",
+            "name": "Alberto Almuiña"
+        },
+        "license": "[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en)",
+        "publisher": {
+            "@type": "Organization",
+            "name": "AlbertoAlmuiña",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://AlbertoAlmui%C3%B1a.com/icons/apple-touch-icon.png"
+            },
+            "url": "https://AlbertoAlmui%C3%B1a.com/"
+        },
+        "mainEntityOfPage": {
+            "@type": "WebSite",
+            "@id": "https://AlbertoAlmui%C3%B1a.com/"
+        }
+    }
+</script>
+
+    
+
+<meta name="twitter:card" content="summary_large_image" />
+
+
+<meta name="twitter:site" content="@AlmuinaAlberto" />
+<meta name="twitter:creator" content="@AlmuinaAlberto" />
+
+    
+
+
+
+<meta property="og:title" content="Why you should learn purrr" />
+<meta property="og:description" content="An introduction to functional programming with `purrr`" />
+<meta property="og:url" content="https://AlbertoAlmui%C3%B1a.com/posts/2021-03-11-purrr/purrr/" />
+<meta property="og:site_name" content="AlbertoAlmuiña" />
+<meta property="og:locale" content="en" />
+            <meta property="og:locale:alternate" content="es" />
+        <meta property="og:image" content="https://AlbertoAlmui%C3%B1a.com/img/purrr_files/map.PNG" />
+<meta property="og:type" content="article" />
+    <meta property="article:published_time" content="2021-03-11T02:13:14-05:00" />
+    <meta property="article:modified_time" content="2021-06-19T05:01:26&#43;02:00" />
+    
+    <meta property="article:section" content="posts" />
+
+
+
+    
+    
+    <link rel="stylesheet" href="/css/default.min.css" rel="stylesheet" id="theme-stylesheet"> 
+	<script src="/js/highlight.js"></script>
+	<script>hljs.highlightAll();</script>
+
+    
+</head>
+
+    <body>
+        <div class="container">
+            
+    <header class="header">
+        
+            <div class="header-wrapper">
+                <div class="header-inner single">
+                    
+    <div class="site-brand">
+        
+            <a href="/" class="brand">AlbertoAlmuiña</a>
+        
+    </div>
+
+                    <nav class="nav">
+    <ul class="menu" id="menu">
+        
+            
+        
+        
+        
+        
+            
+                <li class="menu-item"><a href="/posts/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon archive"><path d="M32 448c0 17.7 14.3 32 32 32h384c17.7 0 32-14.3 32-32V160H32v288zm160-212c0-6.6 5.4-12 12-12h104c6.6 0 12 5.4 12 12v8c0 6.6-5.4 12-12 12H204c-6.6 0-12-5.4-12-12v-8zM480 32H32C14.3 32 0 46.3 0 64v48c0 8.8 7.2 16 16 16h480c8.8 0 16-7.2 16-16V64c0-17.7-14.3-32-32-32z"/></svg><span class="menu-item-name">Posts</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/categories/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon th"><path d="M149.333 56v80c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V56c0-13.255 10.745-24 24-24h101.333c13.255 0 24 10.745 24 24zm181.334 240v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm32-240v80c0 13.255 10.745 24 24 24H488c13.255 0 24-10.745 24-24V56c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24zm-32 80V56c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm-205.334 56H24c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24zM0 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H24c-13.255 0-24 10.745-24 24zm386.667-56H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zm0 160H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zM181.333 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24z"/></svg><span class="menu-item-name">Categories</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/tags/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" class="icon tags"><path d="M497.941 225.941L286.059 14.059A48 48 0 0 0 252.118 0H48C21.49 0 0 21.49 0 48v204.118a48 48 0 0 0 14.059 33.941l211.882 211.882c18.744 18.745 49.136 18.746 67.882 0l204.118-204.118c18.745-18.745 18.745-49.137 0-67.882zM112 160c-26.51 0-48-21.49-48-48s21.49-48 48-48 48 21.49 48 48-21.49 48-48 48zm513.941 133.823L421.823 497.941c-18.745 18.745-49.137 18.745-67.882 0l-.36-.36L527.64 323.522c16.999-16.999 26.36-39.6 26.36-63.64s-9.362-46.641-26.36-63.64L331.397 0h48.721a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882z"/></svg><span class="menu-item-name">Tags</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/about/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" class="icon user-circle"><path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 96c48.6 0 88 39.4 88 88s-39.4 88-88 88-88-39.4-88-88 39.4-88 88-88zm0 344c-58.7 0-111.3-26.6-146.5-68.2 18.8-35.4 55.6-59.8 98.5-59.8 2.4 0 4.8.4 7.1 1.1 13 4.2 26.6 6.9 40.9 6.9 14.3 0 28-2.7 40.9-6.9 2.3-.7 4.7-1.1 7.1-1.1 42.9 0 79.7 24.4 98.5 59.8C359.3 421.4 306.7 448 248 448z"/></svg><span class="menu-item-name">About</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/newsletter/newsletter/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon envelope"><path d="M464 64H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm0 48v40.805c-22.422 18.259-58.168 46.651-134.587 106.49-16.841 13.247-50.201 45.072-73.413 44.701-23.208.375-56.579-31.459-73.413-44.701C106.18 199.465 70.425 171.067 48 152.805V112h416zM48 400V214.398c22.914 18.251 55.409 43.862 104.938 82.646 21.857 17.205 60.134 55.186 103.062 54.955 42.717.231 80.509-37.199 103.053-54.947 49.528-38.783 82.032-64.401 104.947-82.653V400H48z"/></svg><span class="menu-item-name">NewsletteR</span></a>
+                </li>
+            
+        
+            
+                
+                    
+                    
+                        <li class="menu-item">
+                            <a id="theme-switcher" href="#"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon theme-icon-light"><path d="M193.2 104.5l48.8-97.5a18 18 0 0128 0l48.8 97.5 103.4 -34.5a18 18 0 0119.8 19.8l-34.5 103.4l97.5 48.8a18 18 0 010 28l-97.5 48.8 34.5 103.4a18 18 0 01-19.8 19.8l-103.4-34.5-48.8 97.5a18 18 0 01-28 0l-48.8-97.5l-103.4 34.5a18 18 0 01-19.8-19.8l34.5-103.4-97.5-48.8a18 18 0 010-28l97.5-48.8-34.5-103.4a18 18 0 0119.8-19.8zM256 128a128 128 0 10.01 0M256 160a96 96 0 10.01 0"/></svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon theme-icon-dark"><path d="M27 412a256 256 0 10154-407a11.5 11.5 0 00-5 20a201.5 201.5 0 01-134 374a11.5 11.5 0 00-15 13"/></svg></a>
+                        </li>
+                    
+                
+            
+        
+            
+                
+                    
+                        
+                        
+                            <li class="menu-item">
+                                <div id="lang-switcher">
+            <span>English</span>
+            
+                <ul id="langs">
+                    
+                        <li><a rel="alternate" href="/es/posts/2021-03-11-purrr/purrr-es/" hreflang="es" lang="es">Español</a></li>
+                    
+                </ul>
+            
+        </div>
+                            </li>
+                        
+                    
+                
+            
+        
+    </ul>
+</nav>
+
+                    
+                </div>
+            </div>
+            
+    <input type="checkbox" id="nav-toggle" aria-hidden="true" />
+    <label for="nav-toggle" class="nav-toggle"></label>
+    <label for="nav-toggle" class="nav-curtain"></label>
+
+
+        
+    </header>
+
+
+
+
+            
+            
+    <main class="main single" id="main">
+    <div class="main-inner">
+
+        
+
+        <article class="content post h-entry" data-small-caps="true" data-align="default" data-type="posts" data-toc-num="true">
+
+            <h1 class="post-title p-name">Why you should learn purrr</h1>
+
+            
+
+            
+                <div class="post-description p-summary">An introduction to functional programming with <code>purrr</code></div>
+                
+            
+
+            
+                
+
+<div class="post-meta">
+    
+        
+        <time datetime="2021-03-11T02:13:14-05:00" class="post-meta-item published dt-published"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon post-meta-icon"><path d="M148 288h-40c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12zm108-12v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 96v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm192 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96-260v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V112c0-26.5 21.5-48 48-48h48V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h128V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h48c26.5 0 48 21.5 48 48zm-48 346V160H48v298c0 3.3 2.7 6 6 6h340c3.3 0 6-2.7 6-6z"/></svg>&nbsp;2021.3.11</time>
+    
+    
+        
+        <time datetime="2021-06-19T05:01:26&#43;02:00" class="post-meta-item modified dt-updated"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon post-meta-icon"><path d="M400 64h-48V12c0-6.627-5.373-12-12-12h-40c-6.627 0-12 5.373-12 12v52H160V12c0-6.627-5.373-12-12-12h-40c-6.627 0-12 5.373-12 12v52H48C21.49 64 0 85.49 0 112v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm-6 400H54a6 6 0 0 1-6-6V160h352v298a6 6 0 0 1-6 6zm-52.849-200.65L198.842 404.519c-4.705 4.667-12.303 4.637-16.971-.068l-75.091-75.699c-4.667-4.705-4.637-12.303.068-16.971l22.719-22.536c4.705-4.667 12.303-4.637 16.97.069l44.104 44.461 111.072-110.181c4.705-4.667 12.303-4.637 16.971.068l22.536 22.718c4.667 4.705 4.636 12.303-.069 16.97z"/></svg>&nbsp;2021.6.19</time>
+    
+    
+    
+        
+        
+        
+            
+                <span class="post-meta-item category"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M464 128H272l-54.63-54.63c-6-6-14.14-9.37-22.63-9.37H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V176c0-26.51-21.49-48-48-48zm0 272H48V112h140.12l54.63 54.63c6 6 14.14 9.37 22.63 9.37H464v224z"/></svg>&nbsp;<a href="/categories/tidyverse/" class="category-link p-category">tidyverse</a></span>
+            
+        
+    
+    
+        
+        <span class="post-meta-item wordcount"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M497.9 142.1l-46.1 46.1c-4.7 4.7-12.3 4.7-17 0l-111-111c-4.7-4.7-4.7-12.3 0-17l46.1-46.1c18.7-18.7 49.1-18.7 67.9 0l60.1 60.1c18.8 18.7 18.8 49.1 0 67.9zM284.2 99.8L21.6 362.4.4 483.9c-2.9 16.4 11.4 30.6 27.8 27.8l121.5-21.3 262.6-262.6c4.7-4.7 4.7-12.3 0-17l-111-111c-4.8-4.7-12.4-4.7-17.1 0zM124.1 339.9c-5.5-5.5-5.5-14.3 0-19.8l154-154c5.5-5.5 14.3-5.5 19.8 0s5.5 14.3 0 19.8l-154 154c-5.5 5.5-14.3 5.5-19.8 0zM88 424h48v36.3l-64.5 11.3-31.1-31.1L51.7 376H88v48z"/></svg>&nbsp;5050</span>
+    
+    
+        
+        <span class="post-meta-item reading-time"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200zm61.8-104.4l-84.9-61.7c-3.1-2.3-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v141.7l66.8 48.6c5.4 3.9 6.5 11.4 2.6 16.8L334.6 349c-3.9 5.3-11.4 6.5-16.8 2.6z"/></svg>&nbsp;24&nbsp;mins</span>
+    
+    
+    
+</div>
+
+            
+
+            <div class="post-body e-content">
+              <h2 id="why-should-you-learn-to-use-purrr"><a href="#why-should-you-learn-to-use-purrr" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>Why should you learn to use purrr?</h2>
+<p style="text-indent:0"><span class="drop-cap">A</span>ccording to the description of the package on its official page, &ldquo;purrr improves R&rsquo;s set of functional programming (FP) tools by providing a complete and consistent set of tools for working with functions and vectors&rdquo;.</p>
+<p>But then what is a functional programming language? As Hadley explains in <a href="https://adv-r.hadley.nz/fp.html" target="_blank" rel="noopener">Advanced R</a>, there are many definitions that make a language functional, although we can find two characteristics common to all of them:</p>
+<ul>
+<li>
+<p><em>First-class functions:</em> This means that the functions behave like any other structure. That is, you can store it in a variable, store them in lists, pass them as arguments to other functions, create them inside other functions, or even return them as a result of a function.</p>
+</li>
+<li>
+<p>Many functional languages also require <em>pure functions</em>. A function is considered pure if it satisfies the following two characteristics:</p>
+<ol>
+<li>
+<p>The output only depends on the input arguments, so if you call the function with the same arguments, you will get the same result. Functions like <code>run.if ()</code> or <code>read.csv ()</code> are not pure.</p>
+</li>
+<li>
+<p>The function has no side effects like changing the value of a global variable or writing to disk. Functions like <code>print ()</code> or <code>&lt;-</code> are not pure.</p>
+</li>
+</ol>
+</li>
+</ul>
+<p>Strictly speaking, R is not a functional language because it does not require you to write pure functions. However, in parts of your code you can adopt a functional style and in fact you should. But what is a functional style? A functional style consists of breaking down a large problem into smaller pieces and solving each of those pieces from a function or a set of functions. What is achieved is to decompose the problem into isolated functions that operate independently and that are easier to understand. There are three techniques to break the problem down into smaller pieces:</p>
+<ul>
+<li>
+<p><em>Functionals</em> are functions that take a function as an argument that solves the problem for a single input and generalizes it to handle any number of inputs. An example would be the <code>lapply()</code> function.</p>
+</li>
+<li>
+<p>Function factories: functions that create other functions.</p>
+</li>
+<li>
+<p>Function operators: functions that take a function as an argument and return another function as output.</p>
+</li>
+</ul>
+<p>In this post we will focus on the functionals through the <code>purrr</code> package.</p>
+<h2 id="functionals-with-purrr"><a href="#functionals-with-purrr" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>Functionals with <code>purrr</code></h2>
+<p>A functional is a function that takes a function as input and returns a vector as output (or at least that was the idea in the beginning, currently the output is modulable according to the type of functional. In this way, we can obtain functionalities that return us a list, others that return a vector or a data frame). The fundamental functional in purrr is <code>map()</code>, which receives as arguments a vector, a list or a data frame and a function and applies this function to each element of the vector, list or data frame and returns the result in a list. To have a better intuition, let&rsquo;s see an image:</p>
+<p><img src="/img/purrr_files/map.PNG" alt="Source: Advanced R"></p>
+<p>What happens is the following:</p>
+<ul>
+<li>
+<p>If the input argument is a vector, <code>purrr::map()</code> will apply the function passed as an argument to each element of the vector.</p>
+</li>
+<li>
+<p>If the input argument is a list, then map() will apply the function passed as an argument to each element of the list.</p>
+</li>
+<li>
+<p>On the contrary, if the input argument is a data frame, then map() will apply the function to each column of it.</p>
+</li>
+</ul>
+<p>Let&rsquo;s look at a simple example:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="nf">library</span><span class="p">(</span><span class="n">purrr</span><span class="p">)</span>
+<span class="nf">library</span><span class="p">(</span><span class="n">tidyverse</span><span class="p">)</span>
+
+<span class="n">double</span> <span class="o">&lt;-</span> <span class="nf">function</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="n">x</span><span class="o">*</span><span class="m">2</span>
+
+<span class="n">purrr</span><span class="o">::</span><span class="nf">map</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">),</span> <span class="n">double</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [[1]]
+## [1] 2
+## 
+## [[2]]
+## [1] 4
+## 
+## [[3]]
+## [1] 6
+</code></pre><div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">purrr</span><span class="o">::</span><span class="nf">map</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="m">2</span><span class="p">,</span> <span class="m">4</span><span class="p">,</span> <span class="m">10</span><span class="p">),</span> <span class="n">double</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [[1]]
+## [1] 4
+## 
+## [[2]]
+## [1] 8
+## 
+## [[3]]
+## [1] 20
+</code></pre><p>We must bear in mind that <code>purrr::map</code> always returns a list, but sometimes this is not the most comfortable or practical. If we know in advance the output we want, we can use any of the map variants (there are more than those shown in the following example, I recommend that you explore the existing options by typing <code>map_</code>):</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">purrr</span><span class="o">::</span><span class="nf">map_dbl</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">),</span> <span class="n">double</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [1] 2 4 6
+</code></pre><div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">purrr</span><span class="o">::</span><span class="nf">map_chr</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">),</span> <span class="n">double</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [1] &quot;2.000000&quot; &quot;4.000000&quot; &quot;6.000000&quot;
+</code></pre><div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">purrr</span><span class="o">::</span><span class="nf">map_lgl</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">),</span> <span class="n">is.na</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [1] FALSE FALSE FALSE
+</code></pre><p>Another option is to use anonymous functions as a parameter, as follows:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">purrr</span><span class="o">::</span><span class="nf">map</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">),</span> <span class="nf">function</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="n">x</span><span class="o">*</span><span class="m">2</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [[1]]
+## [1] 2
+## 
+## [[2]]
+## [1] 4
+## 
+## [[3]]
+## [1] 6
+</code></pre><p>Even if you don&rsquo;t feel like typing so much, purrr offers a shortcut so you can write your anonymous functions as follows:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">purrr</span><span class="o">::</span><span class="nf">map</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">),</span> <span class="o">~</span><span class="p">{</span><span class="n">.x</span><span class="o">*</span><span class="m">2</span><span class="p">})</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [[1]]
+## [1] 2
+## 
+## [[2]]
+## [1] 4
+## 
+## [[3]]
+## [1] 6
+</code></pre><p>To understand what is happening, we are going to make use of the <code>purrr::as_mapper()</code> function:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">purrr</span><span class="o">::</span><span class="nf">as_mapper</span><span class="p">(</span><span class="o">~</span><span class="p">{</span><span class="n">.x</span><span class="o">*</span><span class="m">2</span><span class="p">})</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## &lt;lambda&gt;
+## function (..., .x = ..1, .y = ..2, . = ..1) 
+## {
+##     .x * 2
+## }
+## attr(,&quot;class&quot;)
+## [1] &quot;rlang_lambda_function&quot; &quot;function&quot;
+</code></pre><p>The function arguments seem a bit strange but they allow you to refer to <code>.</code> for one argument functions, to<code> .x .y</code> for two argument functions and to <code>..1, ..2, ..3 etc. </code>for a function with an arbitrary number of arguments. <code>.</code> remains for compatibility but is not recommended for use.</p>
+<p>To use additional arguments of a function, there are two ways to do it: the first is through an anonymous function:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">purrr</span><span class="o">::</span><span class="nf">map_dbl</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">,</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">4</span><span class="p">,</span> <span class="kc">NA</span><span class="p">)),</span> 
+               <span class="o">~</span> <span class="nf">mean</span><span class="p">(</span><span class="n">.x</span><span class="p">,</span> <span class="n">na.rm</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">))</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [1] 3.0 2.5
+</code></pre><p>The second is to use the arguments after the function itself. This happens because the arguments are passed to the function through the argument <code>...</code>. As an image is worth a thousand words, let&rsquo;s better see it graphically:</p>
+<p><img src="/img/purrr_files/map_args.PNG" alt="Source: Advanced R"></p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">purrr</span><span class="o">::</span><span class="nf">map_dbl</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">,</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">4</span><span class="p">,</span> <span class="kc">NA</span><span class="p">)),</span>
+               <span class="n">mean</span><span class="p">,</span> <span class="n">na.rm</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [1] 3.0 2.5
+</code></pre><p>These are the foundations from which you can start using the purrr functionalities in a safe way. The move to functionals that iterate over multiple arguments as input rather than one (that is, the move to generalization) is trivial, as we will see below.</p>
+<h2 id="map-variants"><a href="#map-variants" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>map variants</h2>
+<p><code>purrr</code> offers us a lot of versatility when it comes to iterating and for this it offers us another set of functions whose objective is to take a function as input and apply it to each pair of extracted elements, either from two vectors, or from two lists. The basic function of this set of functions is <code>purrr::map2()</code>, which, analogously to map(), will always return a list. To understand it better, let&rsquo;s go with a very simple example. Let&rsquo;s try to add two vectors element by element:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">a</span> <span class="o">&lt;-</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">&lt;-</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">)</span>
+
+<span class="n">add</span> <span class="o">&lt;-</span> <span class="nf">function</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span><span class="n">x</span><span class="o">+</span><span class="n">y</span><span class="p">}</span>
+
+<span class="n">purrr</span><span class="o">::</span><span class="nf">map2</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">add</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [[1]]
+## [1] 2
+## 
+## [[2]]
+## [1] 4
+## 
+## [[3]]
+## [1] 6
+</code></pre><p>A bit cumbersome right? Yes! We are going to apply everything we learned in the previous sections. First, we can return a vector if we know the type we want to return, in this case &lsquo;double&rsquo;, simply by using the variants of the basic function with <code>map2_* desired-type*</code>:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">a</span> <span class="o">&lt;-</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">&lt;-</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">)</span>
+
+<span class="n">add</span> <span class="o">&lt;-</span> <span class="nf">function</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span><span class="n">x</span><span class="o">+</span><span class="n">y</span><span class="p">}</span>
+
+<span class="n">purrr</span><span class="o">::</span><span class="nf">map2_dbl</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">add</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [1] 2 4 6
+</code></pre><p>This is all? No, remember that we can use anonymous functions so as not to write so much code, when we use such short functions:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">purrr</span><span class="o">::</span><span class="nf">map2_dbl</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">,</span> <span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">,</span> <span class="o">~</span><span class="p">{</span><span class="n">.x</span> <span class="m">+.</span><span class="n">y</span><span class="p">})</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [1] 2 4 6
+</code></pre><p>The next step in generalization would be the use of the <code>purrr::pmap()</code> function, although possibly by now you already intuit how this function works, right? The idea here is to pass a list as an argument that contains inside X vectors, lists or data frames on which the function passed as an argument will be applied. To do this, let&rsquo;s imagine that I want to add the elements of three vectors, the generalization of the previous example:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">a</span> <span class="o">&lt;-</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">&lt;-</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">)</span>
+<span class="n">c</span> <span class="o">&lt;-</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span> <span class="p">,</span><span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">)</span>
+
+<span class="n">add</span> <span class="o">&lt;-</span> <span class="nf">function</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span> <span class="p">{</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">+</span> <span class="n">z</span><span class="p">}</span>
+
+<span class="n">purrr</span><span class="o">::</span><span class="nf">pmap</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">),</span> <span class="n">add</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [[1]]
+## [1] 3
+## 
+## [[2]]
+## [1] 6
+## 
+## [[3]]
+## [1] 9
+</code></pre><p>Now it is only a matter of simplifying applying the same logic as up to now, selecting the *pmap_* function that returns the result with the format we want and using an anonymous function to make it less cumbersome (remember that when there were more than two arguments, the correct syntax within the anonymous function was *.. 1, ..2, ..3, ..4 etc* to identify the corresponding arguments):</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">a</span> <span class="o">&lt;-</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">&lt;-</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">)</span>
+<span class="n">c</span> <span class="o">&lt;-</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span> <span class="p">,</span><span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">)</span>
+
+<span class="n">purrr</span><span class="o">::</span><span class="nf">pmap_dbl</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">),</span> <span class="o">~</span><span class="p">{</span><span class="kc">..1</span> <span class="o">+</span> <span class="kc">..2</span> <span class="o">+</span> <span class="kc">..3</span><span class="p">})</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [1] 3 6 9
+</code></pre><p>Another very interesting set of functions are <code>purrr::walk()</code> and its variants (walk2, pwalk). These functions are born because sometimes we are not interested in the function returning a result, but in the side effects that the function produces. This is the case for functions like print(), message(), plot() or write.csv(). When we use this type of function with <code>purrr::map()</code> we not only get the desired side effect, but we also get a list with null values. Let&rsquo;s look at the following example:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">saludar</span> <span class="o">&lt;-</span> <span class="nf">function</span><span class="p">(</span><span class="n">.nombre</span><span class="p">)</span> <span class="p">{</span><span class="nf">message</span><span class="p">(</span><span class="nf">paste</span><span class="p">(</span><span class="s">&#39;Hi &#39;</span><span class="p">,</span> <span class="n">.nombre</span><span class="p">))}</span>
+<span class="n">nombres</span> <span class="o">&lt;-</span> <span class="nf">c</span><span class="p">(</span><span class="s">&#39;Alberto&#39;</span><span class="p">,</span> <span class="s">&#39;Diana&#39;</span><span class="p">)</span>
+
+<span class="n">purrr</span><span class="o">::</span><span class="nf">map</span><span class="p">(</span><span class="n">nombres</span><span class="p">,</span> <span class="n">saludar</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## Hi  Alberto
+</code></pre><pre><code>## Hi  Diana
+</code></pre><pre><code>## [[1]]
+## NULL
+## 
+## [[2]]
+## NULL
+</code></pre><p>Our interest is in printing the message, but we don&rsquo;t want to get any results back, and this is where <code>walk()</code> comes in. This function basically what it does internally is call the <em>map</em> function and return the results invisibly:</p>
+<p><img src="/img/purrr_files/walk.PNG" alt="Source: Advanced R"></p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="nf">body</span><span class="p">(</span><span class="n">walk</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## {
+##     map(.x, .f, ...)
+##     invisible(.x)
+## }
+</code></pre><div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">purrr</span><span class="o">::</span><span class="nf">walk</span><span class="p">(</span><span class="n">nombres</span><span class="p">,</span> <span class="n">saludar</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## Hi  Alberto
+</code></pre><pre><code>## Hi  Diana
+</code></pre><p>Another very common use case is when we want to save several files to disk in several paths. For this we will use the <code>purrr:walk2()</code> function, which will take as arguments the data frames to be saved, the routes and the function that will be in charge of carrying out this task:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">temp</span> <span class="o">&lt;-</span> <span class="nf">tempfile</span><span class="p">()</span>
+<span class="nf">dir.create</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+
+<span class="n">cyls</span> <span class="o">&lt;-</span> <span class="nf">split</span><span class="p">(</span><span class="n">mtcars</span><span class="p">,</span> <span class="n">mtcars</span><span class="o">$</span><span class="n">cyl</span><span class="p">)</span>
+<span class="n">paths</span> <span class="o">&lt;-</span> <span class="nf">file.path</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="nf">paste0</span><span class="p">(</span><span class="s">&#34;cyl-&#34;</span><span class="p">,</span> <span class="nf">names</span><span class="p">(</span><span class="n">cyls</span><span class="p">),</span> <span class="s">&#34;.csv&#34;</span><span class="p">))</span>
+
+<span class="n">purrr</span><span class="o">::</span><span class="nf">walk2</span><span class="p">(</span><span class="n">cyls</span><span class="p">,</span> <span class="n">paths</span><span class="p">,</span> <span class="n">write.csv</span><span class="p">)</span>
+
+<span class="nf">dir</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [1] &quot;cyl-4.csv&quot; &quot;cyl-6.csv&quot; &quot;cyl-8.csv&quot;
+</code></pre><p>Basically what is happening when we call walk2 is the following: write.csv(cyls [[1]], paths [[1]]), write.csv(cyls [[2]], paths [[2]] ), write.csv(cyls [[3]], paths [[3]]).</p>
+<p>Another very interesting function is <code>purrr::modify()</code>, which works like map() but guarantees that the output of your function will have the same type as your input. This means that if your input is a vector, your output will be too. If your input is a data frame, your output will be too. Let&rsquo;s see an example:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">purrr</span><span class="o">::</span><span class="nf">modify</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">),</span> <span class="o">~</span> <span class="n">.x</span> <span class="o">*</span> <span class="m">2</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [1] 2 4 6
+</code></pre><div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">purrr</span><span class="o">::</span><span class="nf">modify</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">),</span> <span class="o">~</span> <span class="n">.x</span> <span class="o">*</span> <span class="m">2</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [[1]]
+## [1] 2
+## 
+## [[2]]
+## [1] 4
+## 
+## [[3]]
+## [1] 6
+</code></pre><div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">purrr</span><span class="o">::</span><span class="nf">modify</span><span class="p">(</span><span class="nf">data.frame</span><span class="p">(</span><span class="n">valor</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">)),</span> <span class="o">~</span> <span class="n">.x</span> <span class="o">*</span> <span class="m">2</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>##   valor
+## 1     2
+## 2     4
+## 3     6
+</code></pre><h2 id="practical-example-star-wars-planets"><a href="#practical-example-star-wars-planets" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>Practical Example: Star Wars Planets</h2>
+<p>To delve further into the <code>purrr</code> universe, let&rsquo;s see how we could use what we learned and other additional features from the package to explore a list containing information on 61 planets from the Star Wars saga. We will first see the information about the first planet to know what information we can find:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="nf">library</span><span class="p">(</span><span class="n">repurrrsive</span><span class="p">)</span>
+
+<span class="n">planets</span><span class="o">&lt;-</span><span class="n">repurrrsive</span><span class="o">::</span><span class="n">sw_planets</span>
+<span class="n">planets[[1]]</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## $name
+## [1] &quot;Alderaan&quot;
+## 
+## $rotation_period
+## [1] &quot;24&quot;
+## 
+## $orbital_period
+## [1] &quot;364&quot;
+## 
+## $diameter
+## [1] &quot;12500&quot;
+## 
+## $climate
+## [1] &quot;temperate&quot;
+## 
+## $gravity
+## [1] &quot;1 standard&quot;
+## 
+## $terrain
+## [1] &quot;grasslands, mountains&quot;
+## 
+## $surface_water
+## [1] &quot;40&quot;
+## 
+## $population
+## [1] &quot;2000000000&quot;
+## 
+## $residents
+## [1] &quot;http://swapi.co/api/people/5/&quot;  &quot;http://swapi.co/api/people/68/&quot;
+## [3] &quot;http://swapi.co/api/people/81/&quot;
+## 
+## $films
+## [1] &quot;http://swapi.co/api/films/6/&quot; &quot;http://swapi.co/api/films/1/&quot;
+## 
+## $created
+## [1] &quot;2014-12-10T11:35:48.479000Z&quot;
+## 
+## $edited
+## [1] &quot;2014-12-20T20:58:18.420000Z&quot;
+## 
+## $url
+## [1] &quot;http://swapi.co/api/planets/2/&quot;
+</code></pre><p>An advantage of purrr is that it is pipe-friendly, so we can use its functionals with the famous magritrr pipe. For example, let&rsquo;s see what are the names of the 61 planets in Star Wars:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">planets</span> <span class="o">%&gt;%</span> <span class="n">purrr</span><span class="o">::</span><span class="nf">map_chr</span><span class="p">(</span><span class="o">~</span><span class="n">.$name</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>##  [1] &quot;Alderaan&quot;       &quot;Yavin IV&quot;       &quot;Hoth&quot;           &quot;Dagobah&quot;       
+##  [5] &quot;Bespin&quot;         &quot;Endor&quot;          &quot;Naboo&quot;          &quot;Coruscant&quot;     
+##  [9] &quot;Kamino&quot;         &quot;Geonosis&quot;       &quot;Utapau&quot;         &quot;Mustafar&quot;      
+## [13] &quot;Kashyyyk&quot;       &quot;Polis Massa&quot;    &quot;Mygeeto&quot;        &quot;Felucia&quot;       
+## [17] &quot;Cato Neimoidia&quot; &quot;Saleucami&quot;      &quot;Stewjon&quot;        &quot;Eriadu&quot;        
+## [21] &quot;Corellia&quot;       &quot;Rodia&quot;          &quot;Nal Hutta&quot;      &quot;Dantooine&quot;     
+## [25] &quot;Bestine IV&quot;     &quot;Ord Mantell&quot;    &quot;unknown&quot;        &quot;Trandosha&quot;     
+## [29] &quot;Socorro&quot;        &quot;Mon Cala&quot;       &quot;Chandrila&quot;      &quot;Sullust&quot;       
+## [33] &quot;Toydaria&quot;       &quot;Malastare&quot;      &quot;Dathomir&quot;       &quot;Ryloth&quot;        
+## [37] &quot;Aleen Minor&quot;    &quot;Vulpter&quot;        &quot;Troiken&quot;        &quot;Tund&quot;          
+## [41] &quot;Haruun Kal&quot;     &quot;Cerea&quot;          &quot;Glee Anselm&quot;    &quot;Iridonia&quot;      
+## [45] &quot;Tholoth&quot;        &quot;Iktotch&quot;        &quot;Quermia&quot;        &quot;Dorin&quot;         
+## [49] &quot;Champala&quot;       &quot;Mirial&quot;         &quot;Serenno&quot;        &quot;Concord Dawn&quot;  
+## [53] &quot;Zolan&quot;          &quot;Ojom&quot;           &quot;Skako&quot;          &quot;Muunilinst&quot;    
+## [57] &quot;Shili&quot;          &quot;Kalee&quot;          &quot;Umbara&quot;         &quot;Tatooine&quot;      
+## [61] &quot;Jakku&quot;
+</code></pre><p>As you can see, with purrr we can also extract elements from a list or object on which we will iterate in a simple way! Let&rsquo;s make things a little more complicated. Let&rsquo;s count the number of characters in each name:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">planets</span> <span class="o">%&gt;%</span> <span class="n">purrr</span><span class="o">::</span><span class="nf">map_chr</span><span class="p">(</span><span class="o">~</span><span class="n">.$name</span><span class="p">)</span> <span class="o">%&gt;%</span> <span class="n">purrr</span><span class="o">::</span><span class="nf">map_int</span><span class="p">(</span><span class="o">~</span><span class="nf">str_length</span><span class="p">(</span><span class="n">.x</span><span class="p">))</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>##  [1]  8  8  4  7  6  5  5  9  6  8  6  8  8 11  7  7 14  9  7  6  8  5  9  9 10
+## [26] 11  7  9  7  8  9  7  8  9  8  6 11  7  7  4 10  5 11  8  7  7  7  5  8  6
+## [51]  7 12  5  4  5 10  5  5  6  8  5
+</code></pre><p>And if now I want to keep those that contain more than 10 characters? Of course! purrr offers two functions, <code>keep</code> and<code> discard</code> that precisely allow us to select or discard elements based on a predicate:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">planets</span> <span class="o">%&gt;%</span> <span class="n">purrr</span><span class="o">::</span><span class="nf">map_chr</span><span class="p">(</span><span class="o">~</span><span class="n">.$name</span><span class="p">)</span> <span class="o">%&gt;%</span> <span class="n">purrr</span><span class="o">::</span><span class="nf">map_int</span><span class="p">(</span><span class="o">~</span><span class="nf">str_length</span><span class="p">(</span><span class="n">.x</span><span class="p">))</span> <span class="o">%&gt;%</span> <span class="n">purrr</span><span class="o">::</span><span class="nf">keep</span><span class="p">(</span><span class="o">~</span> <span class="n">.x</span> <span class="o">&gt;</span> <span class="m">8</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>##  [1]  9 11 14  9  9  9 10 11  9  9  9 11 10 11 12 10
+</code></pre><p>Although you can also directly filter the list and keep the elements that interest you. What does this mean? That I want to keep the planets on the list whose names are longer than 8 characters. Let&rsquo;s do it:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">lista_reducida</span> <span class="o">&lt;-</span> <span class="n">planets</span> <span class="o">%&gt;%</span> <span class="n">purrr</span><span class="o">::</span><span class="nf">keep</span><span class="p">(</span><span class="o">~</span><span class="nf">str_length</span><span class="p">(</span><span class="n">.$name</span><span class="p">)</span><span class="o">&gt;</span><span class="m">8</span><span class="p">)</span>
+
+<span class="nf">length</span><span class="p">(</span><span class="n">lista_reducida</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## [1] 16
+</code></pre><p>Another interesting function is <code>pluck</code>, which allows you to flexibly extract elements from a list. In this case we simply extract the first element:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">lista_reducida</span> <span class="o">%&gt;%</span> <span class="n">purrr</span><span class="o">::</span><span class="nf">pluck</span><span class="p">(</span><span class="m">1</span><span class="p">)</span> <span class="c1">#same as lista_reducida[[1]]</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## $name
+## [1] &quot;Coruscant&quot;
+## 
+## $rotation_period
+## [1] &quot;24&quot;
+## 
+## $orbital_period
+## [1] &quot;368&quot;
+## 
+## $diameter
+## [1] &quot;12240&quot;
+## 
+## $climate
+## [1] &quot;temperate&quot;
+## 
+## $gravity
+## [1] &quot;1 standard&quot;
+## 
+## $terrain
+## [1] &quot;cityscape, mountains&quot;
+## 
+## $surface_water
+## [1] &quot;unknown&quot;
+## 
+## $population
+## [1] &quot;1000000000000&quot;
+## 
+## $residents
+## [1] &quot;http://swapi.co/api/people/34/&quot; &quot;http://swapi.co/api/people/55/&quot;
+## [3] &quot;http://swapi.co/api/people/74/&quot;
+## 
+## $films
+## [1] &quot;http://swapi.co/api/films/5/&quot; &quot;http://swapi.co/api/films/4/&quot;
+## [3] &quot;http://swapi.co/api/films/6/&quot; &quot;http://swapi.co/api/films/3/&quot;
+## 
+## $created
+## [1] &quot;2014-12-10T11:54:13.921000Z&quot;
+## 
+## $edited
+## [1] &quot;2014-12-20T20:58:18.432000Z&quot;
+## 
+## $url
+## [1] &quot;http://swapi.co/api/planets/9/&quot;
+</code></pre><p>Other very interesting functions are <code>partial()</code> and <code>compose()</code>. partial() allows you to modify a function to assign values to the parameters that interest you, while compose allows you to concatenate several functions so that they are executed in a certain order. Let&rsquo;s see an example of how to apply these functions. We are going to take the terrain field and we are going to replace the commas with hyphens and then we will put the characters in title format (the first letter of each word in uppercase):</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">string_replace</span> <span class="o">&lt;-</span> <span class="n">purrr</span><span class="o">::</span><span class="nf">partial</span><span class="p">(</span><span class="n">str_replace_all</span><span class="p">,</span> <span class="n">pattern</span> <span class="o">=</span> <span class="s">&#39;,&#39;</span><span class="p">,</span> <span class="n">replacement</span> <span class="o">=</span> <span class="s">&#39;-&#39;</span><span class="p">)</span>
+
+<span class="n">.f</span> <span class="o">&lt;-</span> <span class="n">purrr</span><span class="o">::</span><span class="nf">compose</span><span class="p">(</span><span class="n">str_to_title</span><span class="p">,</span> <span class="n">string_replace</span><span class="p">)</span>
+
+<span class="n">planets</span> <span class="o">%&gt;%</span> <span class="n">purrr</span><span class="o">::</span><span class="nf">map_chr</span><span class="p">(</span><span class="o">~</span><span class="n">.$terrain</span><span class="p">)</span> <span class="o">%&gt;%</span> <span class="n">purrr</span><span class="o">::</span><span class="nf">map_chr</span><span class="p">(</span><span class="n">.f</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>##  [1] &quot;Grasslands- Mountains&quot;                   
+##  [2] &quot;Jungle- Rainforests&quot;                     
+##  [3] &quot;Tundra- Ice Caves- Mountain Ranges&quot;      
+##  [4] &quot;Swamp- Jungles&quot;                          
+##  [5] &quot;Gas Giant&quot;                               
+##  [6] &quot;Forests- Mountains- Lakes&quot;               
+##  [7] &quot;Grassy Hills- Swamps- Forests- Mountains&quot;
+##  [8] &quot;Cityscape- Mountains&quot;                    
+##  [9] &quot;Ocean&quot;                                   
+## [10] &quot;Rock- Desert- Mountain- Barren&quot;          
+## [11] &quot;Scrublands- Savanna- Canyons- Sinkholes&quot; 
+## [12] &quot;Volcanoes- Lava Rivers- Mountains- Caves&quot;
+## [13] &quot;Jungle- Forests- Lakes- Rivers&quot;          
+## [14] &quot;Airless Asteroid&quot;                        
+## [15] &quot;Glaciers- Mountains- Ice Canyons&quot;        
+## [16] &quot;Fungus Forests&quot;                          
+## [17] &quot;Mountains- Fields- Forests- Rock Arches&quot; 
+## [18] &quot;Caves- Desert- Mountains- Volcanoes&quot;     
+## [19] &quot;Grass&quot;                                   
+## [20] &quot;Cityscape&quot;                               
+## [21] &quot;Plains- Urban- Hills- Forests&quot;           
+## [22] &quot;Jungles- Oceans- Urban- Swamps&quot;          
+## [23] &quot;Urban- Oceans- Swamps- Bogs&quot;             
+## [24] &quot;Oceans- Savannas- Mountains- Grasslands&quot; 
+## [25] &quot;Rocky Islands- Oceans&quot;                   
+## [26] &quot;Plains- Seas- Mesas&quot;                     
+## [27] &quot;Unknown&quot;                                 
+## [28] &quot;Mountains- Seas- Grasslands- Deserts&quot;    
+## [29] &quot;Deserts- Mountains&quot;                      
+## [30] &quot;Oceans- Reefs- Islands&quot;                  
+## [31] &quot;Plains- Forests&quot;                         
+## [32] &quot;Mountains- Volcanoes- Rocky Deserts&quot;     
+## [33] &quot;Swamps- Lakes&quot;                           
+## [34] &quot;Swamps- Deserts- Jungles- Mountains&quot;     
+## [35] &quot;Forests- Deserts- Savannas&quot;              
+## [36] &quot;Mountains- Valleys- Deserts- Tundra&quot;     
+## [37] &quot;Unknown&quot;                                 
+## [38] &quot;Urban- Barren&quot;                           
+## [39] &quot;Desert- Tundra- Rainforests- Mountains&quot;  
+## [40] &quot;Barren- Ash&quot;                             
+## [41] &quot;Toxic Cloudsea- Plateaus- Volcanoes&quot;     
+## [42] &quot;Verdant&quot;                                 
+## [43] &quot;Lakes- Islands- Swamps- Seas&quot;            
+## [44] &quot;Rocky Canyons- Acid Pools&quot;               
+## [45] &quot;Unknown&quot;                                 
+## [46] &quot;Rocky&quot;                                   
+## [47] &quot;Unknown&quot;                                 
+## [48] &quot;Unknown&quot;                                 
+## [49] &quot;Oceans- Rainforests- Plateaus&quot;           
+## [50] &quot;Deserts&quot;                                 
+## [51] &quot;Rainforests- Rivers- Mountains&quot;          
+## [52] &quot;Jungles- Forests- Deserts&quot;               
+## [53] &quot;Unknown&quot;                                 
+## [54] &quot;Oceans- Glaciers&quot;                        
+## [55] &quot;Urban- Vines&quot;                            
+## [56] &quot;Plains- Forests- Hills- Mountains&quot;       
+## [57] &quot;Cities- Savannahs- Seas- Plains&quot;         
+## [58] &quot;Rainforests- Cliffs- Canyons- Seas&quot;      
+## [59] &quot;Unknown&quot;                                 
+## [60] &quot;Desert&quot;                                  
+## [61] &quot;Deserts&quot;
+</code></pre><h2 id="practical-example-nested-gapminder"><a href="#practical-example-nested-gapminder" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>Practical Example: Nested Gapminder</h2>
+<p>Finally, we are going to see a practical example of how to combine a nested dataset with the <code>purrr</code> functionals to exploit all the power of both solutions. But first of all, what is a nested data frame? Basically, it is a data frame that has one or more columns made up of lists of data frames. To make the concept clear, let&rsquo;s look at an example:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="p">(</span><span class="n">gap_nested</span> <span class="o">&lt;-</span> <span class="n">repurrrsive</span><span class="o">::</span><span class="n">gap_nested</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## # A tibble: 142 x 3
+##    country     continent data             
+##    &lt;fct&gt;       &lt;fct&gt;     &lt;list&gt;           
+##  1 Afghanistan Asia      &lt;tibble [12 x 4]&gt;
+##  2 Albania     Europe    &lt;tibble [12 x 4]&gt;
+##  3 Algeria     Africa    &lt;tibble [12 x 4]&gt;
+##  4 Angola      Africa    &lt;tibble [12 x 4]&gt;
+##  5 Argentina   Americas  &lt;tibble [12 x 4]&gt;
+##  6 Australia   Oceania   &lt;tibble [12 x 4]&gt;
+##  7 Austria     Europe    &lt;tibble [12 x 4]&gt;
+##  8 Bahrain     Asia      &lt;tibble [12 x 4]&gt;
+##  9 Bangladesh  Asia      &lt;tibble [12 x 4]&gt;
+## 10 Belgium     Europe    &lt;tibble [12 x 4]&gt;
+## # ... with 132 more rows
+</code></pre><p>As can be seen, we have a dataset (tibble) in which for each continent and country, in the &lsquo;data&rsquo; column we have another dataset (tibble) stored. A good place to learn more about these types of datasets is on the <a href="https://tidyr.tidyverse.org/articles/nest.html" target="_blank" rel="noopener">tidyr</a> page itself  (since they are created with the tidyr::nest function). To extract the information in these tibbles in the data column, we can use the <em>pluck</em> function learned earlier. For example, let&rsquo;s look at the saved data for Afghanistan:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">gap_nested</span> <span class="o">%&gt;%</span> <span class="nf">pluck</span><span class="p">(</span><span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## # A tibble: 12 x 4
+##     year lifeExp      pop gdpPercap
+##    &lt;int&gt;   &lt;dbl&gt;    &lt;int&gt;     &lt;dbl&gt;
+##  1  1952    28.8  8425333      779.
+##  2  1957    30.3  9240934      821.
+##  3  1962    32.0 10267083      853.
+##  4  1967    34.0 11537966      836.
+##  5  1972    36.1 13079460      740.
+##  6  1977    38.4 14880372      786.
+##  7  1982    39.9 12881816      978.
+##  8  1987    40.8 13867957      852.
+##  9  1992    41.7 16317921      649.
+## 10  1997    41.8 22227415      635.
+## 11  2002    42.1 25268405      727.
+## 12  2007    43.8 31889923      975.
+</code></pre><p>One of the great advantages of this format is that it allows us to apply the purrr functionalities within the data frame itself, for example, we can apply an ARIMA model with the data of each tibble in the &lsquo;data&rsquo; column to model the life expectancy in function of the other variables: population and per capita GDP. What we do is save the information of each model in a new column called &lsquo;arima&rsquo;:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="nf">library</span><span class="p">(</span><span class="n">modeltime</span><span class="p">)</span>
+<span class="nf">library</span><span class="p">(</span><span class="n">tidymodels</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## -- Attaching packages -------------------------------------- tidymodels 0.1.3 --
+</code></pre><pre><code>## v broom        0.7.6      v rsample      0.1.0 
+## v dials        0.0.9      v tune         0.1.5 
+## v infer        0.5.4      v workflows    0.2.2 
+## v modeldata    0.1.0      v workflowsets 0.0.2 
+## v parsnip      0.1.5      v yardstick    0.0.8 
+## v recipes      0.1.16
+</code></pre><pre><code>## -- Conflicts ----------------------------------------- tidymodels_conflicts() --
+## x scales::discard() masks purrr::discard()
+## x dplyr::filter()   masks stats::filter()
+## x recipes::fixed()  masks stringr::fixed()
+## x dplyr::lag()      masks stats::lag()
+## x yardstick::spec() masks readr::spec()
+## x recipes::step()   masks stats::step()
+## * Use tidymodels_prefer() to resolve common conflicts.
+</code></pre><div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">gap_nested</span> <span class="o">&lt;-</span> <span class="n">gap_nested</span> <span class="o">%&gt;%</span>
+              <span class="nf">mutate</span><span class="p">(</span><span class="n">arima</span> <span class="o">=</span> <span class="nf">map</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">~</span><span class="nf">arima_reg</span><span class="p">(</span><span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;regression&#39;</span><span class="p">)</span> <span class="o">%&gt;%</span>
+                                  <span class="nf">set_engine</span><span class="p">(</span><span class="s">&#39;auto_arima&#39;</span><span class="p">)</span> <span class="o">%&gt;%</span>
+                                  <span class="nf">fit</span><span class="p">(</span><span class="n">lifeExp</span> <span class="o">~</span> <span class="n">pop</span> <span class="o">+</span> <span class="n">gdpPercap</span> <span class="o">+</span> <span class="nf">as.Date</span><span class="p">(</span><span class="nf">ISOdate</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">1</span><span class="p">)),</span> <span class="n">data</span> <span class="o">=</span> <span class="n">.x</span><span class="p">)))</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## frequency = 1 observations per 5 years
+</code></pre><pre><code>## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+## frequency = 1 observations per 5 years
+</code></pre><p>Let&rsquo;s see the ARIMA model selected for life expectancy in Afghanistan:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">gap_nested</span> <span class="o">%&gt;%</span> <span class="nf">pluck</span><span class="p">(</span><span class="s">&#39;arima&#39;</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## parsnip model object
+## 
+## Fit time:  371ms 
+## Series: outcome 
+## Regression with ARIMA(2,0,0) errors 
+## 
+## Coefficients:
+##          ar1      ar2  intercept  pop  gdp_percap
+##       1.8426  -0.8951    32.7412    0      0.0014
+## s.e.  0.0937   0.0906     1.6874    0      0.0013
+## 
+## sigma^2 estimated as 0.5101:  log likelihood=-12.82
+## AIC=37.65   AICc=54.45   BIC=40.56
+</code></pre><p>Now we can extract the values from the model for the training period and store them in another column:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">gap_nested</span> <span class="o">&lt;-</span> <span class="n">gap_nested</span> <span class="o">%&gt;%</span> 
+              <span class="nf">mutate</span><span class="p">(</span><span class="n">fitted</span> <span class="o">=</span> <span class="nf">map</span><span class="p">(</span><span class="n">arima</span><span class="p">,</span> <span class="o">~</span><span class="n">.$fit</span><span class="o">$</span><span class="n">models</span><span class="o">$</span><span class="n">model_1</span><span class="o">$</span><span class="n">fitted</span><span class="p">))</span>
+
+<span class="n">gap_nested</span> <span class="o">%&gt;%</span> <span class="nf">pluck</span><span class="p">(</span><span class="s">&#39;fitted&#39;</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## Time Series:
+## Start = 1 
+## End = 12 
+## Frequency = 1 
+##  [1] 29.44926 29.80294 31.99193 33.64891 35.85104 38.16024 40.12213 40.87741
+##  [9] 41.51748 42.88908 41.41370 42.97920
+</code></pre><p>Finally, we are going to calculate the rsq for each model from the fitted values and the observed values of life expectancy. As for each country and continent we will obtain a single value, we will use the function <code>tidy::unnest()</code> at the end to be able to directly visualize this value (and that it is not nested in a list in the column &lsquo;rsq&rsquo; that we are going to create) :</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-r" data-lang="r"><span class="n">gap_nested</span> <span class="o">&lt;-</span> <span class="n">gap_nested</span> <span class="o">%&gt;%</span>
+              <span class="nf">mutate</span><span class="p">(</span><span class="n">rsq</span> <span class="o">=</span> <span class="nf">map2</span><span class="p">(</span><span class="n">fitted</span><span class="p">,</span> 
+                                <span class="n">data</span><span class="p">,</span> 
+                                <span class="nf">function</span><span class="p">(</span><span class="n">.fitted</span><span class="p">,</span> <span class="n">.data</span><span class="p">)</span> <span class="p">{</span><span class="n">yardstick</span><span class="o">::</span><span class="nf">rsq_vec</span><span class="p">(</span><span class="nf">as.vector</span><span class="p">(</span><span class="n">.fitted</span><span class="p">),</span> <span class="n">.data</span><span class="o">$</span><span class="n">lifeExp</span><span class="p">)}))</span> <span class="o">%&gt;%</span>
+              <span class="n">tidyr</span><span class="o">::</span><span class="nf">unnest</span><span class="p">(</span><span class="n">rsq</span><span class="p">)</span>
+
+<span class="n">gap_nested</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><pre><code>## # A tibble: 142 x 6
+##    country     continent data              arima    fitted      rsq
+##    &lt;fct&gt;       &lt;fct&gt;     &lt;list&gt;            &lt;list&gt;   &lt;list&gt;    &lt;dbl&gt;
+##  1 Afghanistan Asia      &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.988
+##  2 Albania     Europe    &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.938
+##  3 Algeria     Africa    &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.980
+##  4 Angola      Africa    &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.981
+##  5 Argentina   Americas  &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.995
+##  6 Australia   Oceania   &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.984
+##  7 Austria     Europe    &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.986
+##  8 Bahrain     Asia      &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.982
+##  9 Bangladesh  Asia      &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.994
+## 10 Belgium     Europe    &lt;tibble [12 x 4]&gt; &lt;fit[+]&gt; &lt;ts [12]&gt; 0.986
+## # ... with 132 more rows
+</code></pre><p>As you can see, the combination of <code>purrr</code> and<code> tidyr::nest</code> is very powerful to find elegant and efficient solutions. This is only a sketch of what can be done with the functionals of the package, but purrr offers many more functionalities that I definitely recommend you explore. Of course, once you understand how this package works, you will hardly want to abandon it in the future.</p>
+
+            </div>
+
+            
+    
+    
+        <ul class="post-copyright">
+            <li class="copyright-item author"><span class="copyright-item-text">Author</span>: <a href="https://albertoalmuinha.com/" class="p-author h-card" target="_blank" rel="noopener">Alberto Almuiña</a></li>
+            
+                
+                
+                
+                
+                <li class="copyright-item link"><span class="copyright-item-text">Link</span>: <a href="/posts/2021-03-11-purrr/purrr/" target="_blank" rel="noopener">https://AlbertoAlmui%C3%B1a.com/posts/2021-03-11-purrr/purrr/</a></li>
+            
+            <li class="copyright-item license"><span class="copyright-item-text">License</span>: <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></li>
+            
+        </ul>
+    
+
+
+
+        </article>
+
+        
+
+        
+    <div class="updated-badge-container">
+        <span title="Updated @ 2021-06-19 05:01:26 CEST" style="cursor:help">
+
+<svg xmlns="http://www.w3.org/2000/svg" width="130" height="20" class="updated-badge"><linearGradient id="b" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="a"><rect width="130" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#a)"><path class="updated-badge-left" d="M0 0h55v20H0z"/><path class="updated-badge-right" d="M55 0h75v20H55z"/><path fill="url(#b)" d="M0 0h130v20H0z"/></g><g fill="#fff" text-anchor="middle" font-size="110"><text x="285" y="150" fill="#010101" fill-opacity=".3" textLength="450" transform="scale(.1)">updated</text><text x="285" y="140" textLength="450" transform="scale(.1)">updated</text><text x="915" y="150" fill="#010101" fill-opacity=".3" textLength="650" transform="scale(.1)">2021-06-19</text><text x="915" y="140" textLength="650" transform="scale(.1)">2021-06-19</text></g></svg>
+        </span></div>
+
+
+
+        
+
+
+        <div class="post-share">
+
+        
+
+        <div class="share-items">
+
+            
+                <div class="share-item twitter">
+                    
+                    <a href="https://twitter.com/share?url=https://AlbertoAlmui%C3%B1a.com/posts/2021-03-11-purrr/purrr/&amp;text=Why%20you%20should%20learn%20purrr&amp;hashtags=purrr,functionalprogramming,&amp;via=AlmuinaAlberto" title="Share on Twitter" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon twitter-icon"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item facebook">
+                    
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=https://AlbertoAlmui%C3%B1a.com/posts/2021-03-11-purrr/purrr/&amp;hashtag=%23purrr" title="Share on Facebook" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon facebook-icon"><path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item linkedin">
+                    
+                    <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://AlbertoAlmui%C3%B1a.com/posts/2021-03-11-purrr/purrr/&amp;title=Why%20you%20should%20learn%20purrr&amp;summary=An%20introduction%20to%20functional%20programming%20with%20%60purrr%60&amp;source=AlbertoAlmui%c3%b1a" title="Share on LinkedIn" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon linkedin-icon"><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item telegram">
+                    
+                    <a href="https://t.me/share/url?url=https://AlbertoAlmui%C3%B1a.com/posts/2021-03-11-purrr/purrr/&amp;text=Why%20you%20should%20learn%20purrr" title="Share on Telegram" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" class="icon telegram-icon"><path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm121.8 169.9l-40.7 191.8c-3 13.6-11.1 16.9-22.4 10.5l-62-45.7-29.9 28.8c-3.3 3.3-6.1 6.1-12.5 6.1l4.4-63.1 114.9-103.8c5-4.4-1.1-6.9-7.7-2.5l-142 89.4-61.2-19.1c-13.3-4.2-13.6-13.3 2.8-19.7l239.1-92.2c11.1-4 20.8 2.7 17.2 19.5z"/></svg></a>
+                </div>
+            
+
+            
+
+            
+
+            
+
+            
+
+            
+                <div class="share-item qrcode">
+                    <div class="qrcode-container" title="Share via QR Code"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon qrcode-icon"><path d="M0 224h192V32H0v192zM64 96h64v64H64V96zm192-64v192h192V32H256zm128 128h-64V96h64v64zM0 480h192V288H0v192zm64-128h64v64H64v-64zm352-64h32v128h-96v-32h-32v96h-64V288h96v32h64v-32zm0 160h32v32h-32v-32zm-64 0h32v32h-32v-32z"/></svg><div id="qrcode-img"></div>
+                    </div>
+                    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+
+<script>
+    var typeNumber = 0;
+    var errorCorrectionLevel = 'L';
+    var qr = qrcode(typeNumber, errorCorrectionLevel);
+    qr.addData('https:\/\/AlbertoAlmui%C3%B1a.com\/posts\/2021-03-11-purrr\/purrr\/');
+    qr.make();
+    document.getElementById('qrcode-img').innerHTML = qr.createImgTag();
+</script>
+
+                </div>
+            
+
+        </div>
+
+    </div>
+
+
+
+
+        
+    
+    
+
+
+
+        
+    
+        <div class="post-tags">
+            
+                
+                
+                
+                
+                    
+                    <a href="/tags/purrr/" rel="tag" class="post-tags-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon tag-icon"><path d="M0 252.118V48C0 21.49 21.49 0 48 0h204.118a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882L293.823 497.941c-18.745 18.745-49.137 18.745-67.882 0L14.059 286.059A48 48 0 0 1 0 252.118zM112 64c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48z"/></svg>purrr</a>
+                
+            
+                
+                
+                
+                
+                    
+                    <a href="/tags/functional-programming/" rel="tag" class="post-tags-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon tag-icon"><path d="M0 252.118V48C0 21.49 21.49 0 48 0h204.118a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882L293.823 497.941c-18.745 18.745-49.137 18.745-67.882 0L14.059 286.059A48 48 0 0 1 0 252.118zM112 64c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48z"/></svg>functional programming</a>
+                
+            
+        </div>
+    
+
+
+
+        
+
+
+        
+
+
+        
+    
+        
+        
+    
+    
+    
+    
+        <ul class="post-nav">
+            
+                <li class="post-nav-prev">
+                    <a href="/posts/2021-05-30-boostime_arima_catboost/boostime-arima-catboost/" rel="prev">&lt; Boostime: Combining ARIMA with Catboost</a>
+                </li>
+            
+            
+                <li class="post-nav-next">
+                    <a href="/posts/2021-02-28-box/box-package/" rel="next">Box Package &gt;</a>
+                </li>
+            
+        </ul>
+    
+
+
+
+        
+    
+
+        <div class="load-comments">
+            <div id="load-comments">Load Comments?</div>
+        </div>
+
+        
+            <div id="disqus_thread"></div>
+        
+
+        
+
+        
+
+    
+
+
+
+    </div>
+</main>
+
+
+            
+    <div id="back-to-top" class="back-to-top">
+        <a href="#"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon arrow-up"><path d="M34.9 289.5l-22.2-22.2c-9.4-9.4-9.4-24.6 0-33.9L207 39c9.4-9.4 24.6-9.4 33.9 0l194.3 194.3c9.4 9.4 9.4 24.6 0 33.9L413 289.4c-9.5 9.5-25 9.3-34.3-.4L264 168.6V456c0 13.3-10.7 24-24 24h-32c-13.3 0-24-10.7-24-24V168.6L69.2 289.1c-9.3 9.8-24.8 10-34.3.4z"/></svg></a>
+    </div>
+
+
+            
+    <footer id="footer" class="footer">
+        <div class="footer-inner">
+            <div class="site-info">©&nbsp;2021–2021&nbsp;<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon footer-icon"><path d="M462.3 62.6C407.5 15.9 326 24.3 275.7 76.2L256 96.5l-19.7-20.3C186.1 24.3 104.5 15.9 49.7 62.6c-62.8 53.6-66.1 149.8-9.9 207.9l193.5 199.8c12.5 12.9 32.8 12.9 45.3 0l193.5-199.8c56.3-58.1 53-154.3-9.8-207.9z"/></svg>&nbsp;Alberto Almuiña</div><div class="powered-by">Powered by <a href="https://github.com/gohugoio/hugo" target="_blank" rel="noopener">Hugo</a> | Theme is <a href="https://github.com/reuixiy/hugo-theme-meme" target="_blank" rel="noopener">MemE</a></div><div class="site-copyright"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></div>
+
+            
+    
+        <ul class="socials"><li class="socials-item">
+                    <a href="/rss.xml" target="_blank" rel="external noopener" title="RSS"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon social-icon"><path d="M19.199 24C19.199 13.467 10.533 4.8 0 4.8V0c13.165 0 24 10.835 24 24h-4.801zM3.291 17.415c1.814 0 3.293 1.479 3.293 3.295 0 1.813-1.485 3.29-3.301 3.29C1.47 24 0 22.526 0 20.71s1.475-3.294 3.291-3.295zM15.909 24h-4.665c0-6.169-5.075-11.245-11.244-11.245V8.09c8.727 0 15.909 7.184 15.909 15.91z"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="mailto:albertogonzalezalmuinha@gmail.com" target="_blank" rel="external noopener" title="Email"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon social-icon"><path d="M464 64H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm0 48v40.805c-22.422 18.259-58.168 46.651-134.587 106.49-16.841 13.247-50.201 45.072-73.413 44.701-23.208.375-56.579-31.459-73.413-44.701C106.18 199.465 70.425 171.067 48 152.805V112h416zM48 400V214.398c22.914 18.251 55.409 43.862 104.938 82.646 21.857 17.205 60.134 55.186 103.062 54.955 42.717.231 80.509-37.199 103.053-54.947 49.528-38.783 82.032-64.401 104.947-82.653V400H48z"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="https://github.com/AlbertoAlmuinha" target="_blank" rel="external noopener" title="GitHub"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon social-icon"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="https://twitter.com/AlmuinaAlberto" target="_blank" rel="external noopener" title="Twitter"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon social-icon"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="https://www.linkedin.com/in/alberto-gonz%C3%A1lez-almui%C3%B1a-b1176881/" target="_blank" rel="external noopener" title="Linkedin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon social-icon"><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg></a>
+                </li></ul>
+    
+
+
+
+            
+        </div>
+    </footer>
+
+
+        </div>
+        
+
+        
+
+
+    <script>
+    if (typeof MathJax === 'undefined') {
+        window.MathJax = {
+            loader: {
+                load: ['[tex]/mhchem']
+            },
+            
+            tex: {
+                inlineMath: {'[+]': [['$', '$']]},
+                tags: 'ams',
+                packages: {'[+]': ['mhchem']}
+            }
+        };
+        (function() {
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.1.2/es5/tex-mml-chtml.js';
+            script.defer = true;
+            document.head.appendChild(script);
+        })();
+    } else {
+        MathJax.texReset();
+        MathJax.typeset();
+    }
+</script>
+
+
+
+
+
+
+    
+
+        
+            <script>
+    function loadComments() {
+        if (typeof DISQUS === 'undefined') {
+            var disqus_config = function() {
+                this.page.url = 'https:\/\/AlbertoAlmui%C3%B1a.com\/posts\/2021-03-11-purrr\/purrr\/';
+                this.page.identifier = '\/posts\/2021-03-11-purrr\/purrr\/';
+                this.page.title = 'Why you should learn purrr';
+            };
+            (function() {
+                var d = document, s = d.createElement('script'); s.async = true;
+                s.src = 'https://https-alberto-almuinha-netlify-app.disqus.com/embed.js';
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        } else {
+            DISQUS.reset({
+                reload: true,
+                config: function() {
+                    this.page.url = 'https:\/\/AlbertoAlmui%C3%B1a.com\/posts\/2021-03-11-purrr\/purrr\/';
+                    this.page.identifier = '\/posts\/2021-03-11-purrr\/purrr\/';
+                    this.page.title = 'Why you should learn purrr';
+                }
+            });
+        }
+    }
+</script>
+
+        
+
+        
+
+        
+
+    
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/medium-zoom@latest/dist/medium-zoom.min.js"></script>
+
+<script>
+    mediumZoom(document.querySelectorAll('div.post-body img'), {
+        background: 'hsla(var(--color-bg-h), var(--color-bg-s), var(--color-bg-l), 0.95)'
+    })
+</script>
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/instant.page@5.1.0/instantpage.min.js" type="module" defer></script>
+
+
+
+
+
+
+
+    </body>
+</html>

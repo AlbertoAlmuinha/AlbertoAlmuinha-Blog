@@ -1,0 +1,656 @@
+---
+title: 'Tidymodels: el paquete `recipes` '
+author: "Alberto Almuiña"
+date: '2020-08-23T21:13:14-05:00'
+description: Aprenda a preprocesar sus datos de una manera simple y consistente.
+slug: recipes_es
+categories: 
+- tidymodels
+tags:
+- preprocesamiento
+- recipes
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+<script src="/rmarkdown-libs/kePrint/kePrint.js"></script>
+<link href="/rmarkdown-libs/lightable/lightable.css" rel="stylesheet" />
+
+
+<hr />
+<div id="qué-es-tidymodels" class="section level2">
+<h2>¿Qué es tidymodels?</h2>
+<hr />
+<p><code>tidymodels</code> es un nuevo ecosistema que consiste en una serie de paquetes que facilitan el proceso de modelado en proyectos de ciencia de datos. Permite de manera unificada realizar remuestreo, preprocesamiento de datos, aporta una interfaz de modelado unificado y validación de resultados. El ciclo completo sería el siguiente:</p>
+<p><img src="/img/recipes.es_files/cycle.jpg" /></p>
+<p>En esta publicación nos centraremos en el paso del preprocesamiento de datos con el paquete recipes.</p>
+<hr />
+</div>
+<div id="introducción-a-recipes" class="section level2">
+<h2>Introducción a <code>recipes</code></h2>
+<hr />
+<p>Este paquete nace del esfuerzo de reunir todos los pasos de preparación de datos antes de aplicar un modelo de manera simple, eficiente y consistente. <code>recipes</code> nace de la analogía entre preparar una receta de cocina y preprocesar sus datos … ¿cuál es la similitud? Ambos siguen algunos pasos antes de cocinar (modelar).</p>
+<p>Cada receta consta de cuatro pasos fundamentales:</p>
+<ul>
+<li><p><code>recipe()</code>: Se especifica la fórmula (variables predictoras y variables de respuesta).</p></li>
+<li><p><code>step_xxx()</code>: Se definen los pasos a seguir: imputación de missing values, variables dummy, centrado, escalado, etc.</p></li>
+<li><p><code>prep()</code>: Preparación de la receta. Esto significa que se utiliza un conjunto de datos para analizar cada paso en él.</p></li>
+<li><p><code>bake()</code>: Aplique los pasos de preprocesamiento a sus conjuntos de datos.</p></li>
+</ul>
+<p>En esta publicación cubriremos estas cuatro partes y veremos ejemplos de buenas prácticas. Espero poder convencerte de que en adelante, tidymodels en general y recipes en particular, son una buena opción.</p>
+</div>
+<div id="un-breve-ejemplo-airquality-dataset" class="section level2">
+<h2>Un breve ejemplo: Airquality dataset</h2>
+<pre class="r"><code>library(rsample)
+library(recipes)
+
+data(&quot;airquality&quot;)
+
+head(airquality) %&gt;% 
+  knitr::kable(&#39;html&#39;) %&gt;% 
+  kableExtra::kable_styling(position = &#39;left&#39;, 
+                            font_size = 10, 
+                            fixed_thead = list(enabled = T, background = &quot;blue&quot;)
+                            ) </code></pre>
+<table class="table" style="font-size: 10px; ">
+<thead>
+<tr>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Ozone
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Solar.R
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Wind
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Temp
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Month
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Day
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+41
+</td>
+<td style="text-align:right;">
+190
+</td>
+<td style="text-align:right;">
+7.4
+</td>
+<td style="text-align:right;">
+67
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+36
+</td>
+<td style="text-align:right;">
+118
+</td>
+<td style="text-align:right;">
+8.0
+</td>
+<td style="text-align:right;">
+72
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+149
+</td>
+<td style="text-align:right;">
+12.6
+</td>
+<td style="text-align:right;">
+74
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+18
+</td>
+<td style="text-align:right;">
+313
+</td>
+<td style="text-align:right;">
+11.5
+</td>
+<td style="text-align:right;">
+62
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+14.3
+</td>
+<td style="text-align:right;">
+56
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+5
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+28
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+14.9
+</td>
+<td style="text-align:right;">
+66
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+6
+</td>
+</tr>
+</tbody>
+</table>
+<p>Primero, vamos a separar nuestro conjunto de datos en un conjunto de datos de entrenamiento y uno de test. Utilizaremos el 80% de nuestros datos para entrenar y el 20% restante para testear.</p>
+<pre class="r"><code>(.df&lt;-airquality %&gt;% initial_split(prop = 0.8))</code></pre>
+<pre><code>## &lt;Analysis/Assess/Total&gt;
+## &lt;123/30/153&gt;</code></pre>
+<pre class="r"><code>.df_train&lt;-.df %&gt;% training()
+
+.df_test&lt;-.df %&gt;% testing()</code></pre>
+<p>Se ver cómo <code>rsample</code> nos arroja un objeto dividido, donde se nos dice cuántos registros se utilizan en cada conjunto de datos y el total. A partir de las funciones <code>training ()</code> y <code>testing ()</code> podemos extraer los datos correspondientes.</p>
+<p><strong>Creando un recipiente</strong></p>
+<p>Ahora es el momento de crear nuestra primera receta.</p>
+<pre class="r"><code>.recipe&lt;-recipe(Ozone ~ ., data = .df_train)
+
+summary(.recipe)</code></pre>
+<pre><code>## # A tibble: 6 x 4
+##   variable type    role      source  
+##   &lt;chr&gt;    &lt;chr&gt;   &lt;chr&gt;     &lt;chr&gt;   
+## 1 Solar.R  numeric predictor original
+## 2 Wind     numeric predictor original
+## 3 Temp     numeric predictor original
+## 4 Month    numeric predictor original
+## 5 Day      numeric predictor original
+## 6 Ozone    numeric outcome   original</code></pre>
+<p>Se puede ver cómo ‘recipes’ asigna a cada variable un tipo y un rol. Esto nos permitirá seleccionar posteriormente a qué variables aplicar un paso de preprocesamiento en función de su tipología o rol.
+Una opción muy interesante que permite recipes es actualizar los roles de las variables. Por ejemplo, en este conjunto de datos tenemos dos columnas que tienen valores faltantes: ‘Ozone’ y ‘Solar.R’. Podemos asignar a estas variables un rol específico que luego nos permitirá identificarlas. Crearemos el nuevo rol ‘NA_Variable’ con la función <code>udpate_role()</code>:</p>
+<pre class="r"><code>.recipe&lt;-.recipe %&gt;% update_role(Ozone, Solar.R, new_role = &#39;NA_Variable&#39;)
+
+summary(.recipe)</code></pre>
+<pre><code>## # A tibble: 6 x 4
+##   variable type    role        source  
+##   &lt;chr&gt;    &lt;chr&gt;   &lt;chr&gt;       &lt;chr&gt;   
+## 1 Solar.R  numeric NA_Variable original
+## 2 Wind     numeric predictor   original
+## 3 Temp     numeric predictor   original
+## 4 Month    numeric predictor   original
+## 5 Day      numeric predictor   original
+## 6 Ozone    numeric NA_Variable original</code></pre>
+<p><strong>Seleccionando los pasos de preprocesamiento</strong></p>
+<p>Una vez que se crea la receta, es el turno de agregar los pasos necesarios para llevar a cabo el preprocesamiento de los datos. Tenemos muchos pasos para elegir:</p>
+<pre class="r"><code>ls(&#39;package:recipes&#39;, pattern = &#39;^step_&#39;)</code></pre>
+<pre><code>##  [1] &quot;step_arrange&quot;       &quot;step_bagimpute&quot;     &quot;step_bin2factor&quot;   
+##  [4] &quot;step_BoxCox&quot;        &quot;step_bs&quot;            &quot;step_center&quot;       
+##  [7] &quot;step_classdist&quot;     &quot;step_corr&quot;          &quot;step_count&quot;        
+## [10] &quot;step_cut&quot;           &quot;step_date&quot;          &quot;step_depth&quot;        
+## [13] &quot;step_discretize&quot;    &quot;step_downsample&quot;    &quot;step_dummy&quot;        
+## [16] &quot;step_factor2string&quot; &quot;step_filter&quot;        &quot;step_geodist&quot;      
+## [19] &quot;step_holiday&quot;       &quot;step_hyperbolic&quot;    &quot;step_ica&quot;          
+## [22] &quot;step_impute_linear&quot; &quot;step_integer&quot;       &quot;step_interact&quot;     
+## [25] &quot;step_intercept&quot;     &quot;step_inverse&quot;       &quot;step_invlogit&quot;     
+## [28] &quot;step_isomap&quot;        &quot;step_knnimpute&quot;     &quot;step_kpca&quot;         
+## [31] &quot;step_kpca_poly&quot;     &quot;step_kpca_rbf&quot;      &quot;step_lag&quot;          
+## [34] &quot;step_lincomb&quot;       &quot;step_log&quot;           &quot;step_logit&quot;        
+## [37] &quot;step_lowerimpute&quot;   &quot;step_meanimpute&quot;    &quot;step_medianimpute&quot; 
+## [40] &quot;step_modeimpute&quot;    &quot;step_mutate&quot;        &quot;step_mutate_at&quot;    
+## [43] &quot;step_naomit&quot;        &quot;step_nnmf&quot;          &quot;step_normalize&quot;    
+## [46] &quot;step_novel&quot;         &quot;step_ns&quot;            &quot;step_num2factor&quot;   
+## [49] &quot;step_nzv&quot;           &quot;step_ordinalscore&quot;  &quot;step_other&quot;        
+## [52] &quot;step_pca&quot;           &quot;step_pls&quot;           &quot;step_poly&quot;         
+## [55] &quot;step_profile&quot;       &quot;step_range&quot;         &quot;step_ratio&quot;        
+## [58] &quot;step_regex&quot;         &quot;step_relevel&quot;       &quot;step_relu&quot;         
+## [61] &quot;step_rename&quot;        &quot;step_rename_at&quot;     &quot;step_rm&quot;           
+## [64] &quot;step_rollimpute&quot;    &quot;step_sample&quot;        &quot;step_scale&quot;        
+## [67] &quot;step_shuffle&quot;       &quot;step_slice&quot;         &quot;step_spatialsign&quot;  
+## [70] &quot;step_sqrt&quot;          &quot;step_string2factor&quot; &quot;step_unknown&quot;      
+## [73] &quot;step_unorder&quot;       &quot;step_upsample&quot;      &quot;step_window&quot;       
+## [76] &quot;step_YeoJohnson&quot;    &quot;step_zv&quot;</code></pre>
+<p>Algunos de los más comunes son los siguientes:</p>
+<ul>
+<li><p><strong><code>step_XXXimpute():</code></strong> Métodos para imputar missing values como meanimpute, medianimpute, knnimpute …</p></li>
+<li><p><strong><code>step_range():</code></strong> Normaliza los datos numéricos para estar dentro de un rango de valores predefinido.</p></li>
+<li><p><strong><code>step_center():</code></strong> Normaliza los datos numéricos para tener una media de cero.</p></li>
+<li><p><strong><code>step_scale():</code></strong> Normaliza los datos numéricos para tener una desviación estándar de uno.</p></li>
+<li><p><strong><code>step_dummy():</code></strong> Convierte datos nominales (por ejemplo, caracteres o factores) en uno o más términos numéricos de modelo binario para los niveles de los datos originales.</p></li>
+<li><p><strong><code>step_other():</code></strong> Paso que potencialmente agrupará valores que ocurren con poca frecuencia en una categoría de “otros”.</p></li>
+</ul>
+<p>El orden en que se ejecutan los pasos es importante, como se puede leer en la <a href="https://tidymodels.github.io/recipes/articles/Ordering.html">página oficial del paquete</a>:</p>
+<ol style="list-style-type: decimal">
+<li>Imputar</li>
+<li>Transformaciones individuales para la asimetría y otros problemas.</li>
+<li>Discretice (si es necesario y si no tiene otra opción)</li>
+<li>Crea variables dummy</li>
+<li>Crea interacciones</li>
+<li>Pasos de normalización (centrado, escalado, rango, etc.)</li>
+<li>Transformación multivariada (por ejemplo, PCA)</li>
+</ol>
+<p>Además, en cada paso debemos especificar a qué columnas afecta ese paso. Hay varias formas de hacerlo, mencionaremos las más comunes:</p>
+<ol style="list-style-type: decimal">
+<li><p>Pasando el nombre de la variable en el primer argumento</p></li>
+<li><p>Selección por el papel de las variables con las funciones <code>all_predictors()</code> y <code>all_outcomes()</code>. Como en nuestro caso hemos cambiado los roles ‘predeterminados’ a ‘NA_Variable’, podemos usar la función <code>has_role()</code> para seleccionarlos.</p></li>
+<li><p>Seleccionando por el tipo de las variables con las funciones <code>all_nominal()</code> y <code>all_numerical()</code>.</p></li>
+<li><p>Usando los selectores dplyr como <code>contains()</code>, <code>starts_with()</code> o <code>ends_with()</code> funciones.</p></li>
+</ol>
+<p>Vamos a aplicar algunos de estos pasos a nuestro ejemplo:</p>
+<pre class="r"><code>.recipe&lt;-.recipe %&gt;% 
+          step_meanimpute(has_role(&#39;NA_Variable&#39;), -Solar.R) %&gt;%
+          step_knnimpute(contains(&#39;.R&#39;), neighbors = 3) %&gt;%
+          step_center(all_numeric(), -has_role(&#39;NA_Variable&#39;)) %&gt;%
+          step_scale(all_numeric(), -has_role(&#39;NA_Variable&#39;))
+
+.recipe</code></pre>
+<pre><code>## Data Recipe
+## 
+## Inputs:
+## 
+##         role #variables
+##  NA_Variable          2
+##    predictor          4
+## 
+## Operations:
+## 
+## Mean Imputation for has_role(&quot;NA_Variable&quot;), -Solar.R
+## K-nearest neighbor imputation for contains(&quot;.R&quot;)
+## Centering for all_numeric(), -has_role(&quot;NA_Variable&quot;)
+## Scaling for all_numeric(), -has_role(&quot;NA_Variable&quot;)</code></pre>
+<p>Se puede ver cómo combinando todas las técnicas de selección de variables obtenemos una gran versatilidad. También comentar que cuando se usa el signo menos significa que las columnas que cumplen con esta condición están excluidas del paso de preprocesamiento. También se puede ver cómo el objeto de recetas ahora especifica todos los pasos que se llevarán a cabo y en qué variables.</p>
+<p><strong>Preparando la receta</strong></p>
+<p>Ha llegado el momento de preparar la receta en un conjunto de datos. Una vez preparado, podemos aplicar esta receta en múltiples conjuntos de datos:</p>
+<pre class="r"><code>(.recipe&lt;-.recipe %&gt;% prep(.df_train))</code></pre>
+<pre><code>## Data Recipe
+## 
+## Inputs:
+## 
+##         role #variables
+##  NA_Variable          2
+##    predictor          4
+## 
+## Training data contained 123 data points and 29 incomplete rows. 
+## 
+## Operations:
+## 
+## Mean Imputation for Ozone [trained]
+## K-nearest neighbor imputation for Wind, Temp, Month, Day [trained]
+## Centering for Wind, Temp, Month, Day [trained]
+## Scaling for Wind, Temp, Month, Day [trained]</code></pre>
+<p>Se observa cómo la receta ahora está ‘entrenada’.</p>
+<p><strong>Hornear la receta</strong></p>
+<p>Ahora podemos aplicar esta receta a otro conjunto de datos, por ejemplo a los datos de prueba:</p>
+<pre class="r"><code>.df_test&lt;-.recipe %&gt;% bake(.df_test)
+
+head(.df_test) %&gt;% 
+  knitr::kable(&#39;html&#39;) %&gt;% 
+  kableExtra::kable_styling(position = &#39;left&#39;, 
+                            font_size = 10, 
+                            fixed_thead = list(enabled = T, background = &quot;blue&quot;)
+                            ) </code></pre>
+<table class="table" style="font-size: 10px; ">
+<thead>
+<tr>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Solar.R
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Wind
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Temp
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Month
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Day
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Ozone
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+299
+</td>
+<td style="text-align:right;">
+-0.3788245
+</td>
+<td style="text-align:right;">
+-1.3672063
+</td>
+<td style="text-align:right;">
+-1.394275
+</td>
+<td style="text-align:right;">
+-0.8978421
+</td>
+<td style="text-align:right;">
+23
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+247
+</td>
+<td style="text-align:right;">
+-0.8319835
+</td>
+<td style="text-align:right;">
+-0.4300562
+</td>
+<td style="text-align:right;">
+-1.394275
+</td>
+<td style="text-align:right;">
+-0.4475482
+</td>
+<td style="text-align:right;">
+7
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+322
+</td>
+<td style="text-align:right;">
+0.3942115
+</td>
+<td style="text-align:right;">
+-1.0548229
+</td>
+<td style="text-align:right;">
+-1.394275
+</td>
+<td style="text-align:right;">
+0.4530396
+</td>
+<td style="text-align:right;">
+30
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+44
+</td>
+<td style="text-align:right;">
+-0.0856039
+</td>
+<td style="text-align:right;">
+-1.6795896
+</td>
+<td style="text-align:right;">
+-1.394275
+</td>
+<td style="text-align:right;">
+0.5656131
+</td>
+<td style="text-align:right;">
+11
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+92
+</td>
+<td style="text-align:right;">
+0.5274936
+</td>
+<td style="text-align:right;">
+-1.7837174
+</td>
+<td style="text-align:right;">
+-1.394275
+</td>
+<td style="text-align:right;">
+1.0159070
+</td>
+<td style="text-align:right;">
+32
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+100
+</td>
+<td style="text-align:right;">
+-0.5387630
+</td>
+<td style="text-align:right;">
+-2.2002285
+</td>
+<td style="text-align:right;">
+-1.394275
+</td>
+<td style="text-align:right;">
+1.3536274
+</td>
+<td style="text-align:right;">
+44
+</td>
+</tr>
+</tbody>
+</table>
+<p>Finalmente lo ponemos todo junto:</p>
+<pre class="r"><code>.df&lt;-recipe(Ozone ~ ., data = .df_train) %&gt;%
+   
+       update_role(Ozone, Solar.R, new_role = &#39;NA_Variable&#39;) %&gt;%
+   
+       step_meanimpute(has_role(&#39;NA_Variable&#39;), -Solar.R) %&gt;%
+       step_knnimpute(contains(&#39;.R&#39;), neighbors = 3) %&gt;%
+       step_center(all_numeric(), -has_role(&#39;NA_Variable&#39;)) %&gt;%
+       step_scale(all_numeric(), -has_role(&#39;NA_Variable&#39;)) %&gt;%
+   
+       prep(.df_train) %&gt;%
+       bake(.df_test)
+  
+head(.df) %&gt;% 
+  knitr::kable(&#39;html&#39;) %&gt;% 
+  kableExtra::kable_styling(position = &#39;left&#39;, 
+                            font_size = 10, 
+                            fixed_thead = list(enabled = T, background = &quot;blue&quot;)
+                            ) </code></pre>
+<table class="table" style="font-size: 10px; ">
+<thead>
+<tr>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Solar.R
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Wind
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Temp
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Month
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Day
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: blue;">
+Ozone
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+299
+</td>
+<td style="text-align:right;">
+-2.772257
+</td>
+<td style="text-align:right;">
+-8.277876
+</td>
+<td style="text-align:right;">
+-5.870156
+</td>
+<td style="text-align:right;">
+-1.786930
+</td>
+<td style="text-align:right;">
+23
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+247
+</td>
+<td style="text-align:right;">
+-2.893053
+</td>
+<td style="text-align:right;">
+-8.180293
+</td>
+<td style="text-align:right;">
+-5.870156
+</td>
+<td style="text-align:right;">
+-1.736239
+</td>
+<td style="text-align:right;">
+7
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+322
+</td>
+<td style="text-align:right;">
+-2.566193
+</td>
+<td style="text-align:right;">
+-8.245349
+</td>
+<td style="text-align:right;">
+-5.870156
+</td>
+<td style="text-align:right;">
+-1.634856
+</td>
+<td style="text-align:right;">
+30
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+44
+</td>
+<td style="text-align:right;">
+-2.694095
+</td>
+<td style="text-align:right;">
+-8.310404
+</td>
+<td style="text-align:right;">
+-5.870156
+</td>
+<td style="text-align:right;">
+-1.622183
+</td>
+<td style="text-align:right;">
+11
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+92
+</td>
+<td style="text-align:right;">
+-2.530665
+</td>
+<td style="text-align:right;">
+-8.321247
+</td>
+<td style="text-align:right;">
+-5.870156
+</td>
+<td style="text-align:right;">
+-1.571492
+</td>
+<td style="text-align:right;">
+32
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+100
+</td>
+<td style="text-align:right;">
+-2.814891
+</td>
+<td style="text-align:right;">
+-8.364617
+</td>
+<td style="text-align:right;">
+-5.870156
+</td>
+<td style="text-align:right;">
+-1.533474
+</td>
+<td style="text-align:right;">
+44
+</td>
+</tr>
+</tbody>
+</table>
+<p>Como se ha visto, este paquete ofrece una amplia gama de posibilidades y facilidades para llevar a cabo la tarea de preprocesamiento. Muchos otros temas interesantes sobre este paquete se han dejado de lado en esta publicación: crear su propio paso de preprocesamiento o combinar este paquete con rsamples para aplicar múltiples recetas a particiones utilizadas por técnicas de bootstrapping o cv-Folds. Tal vez para una próxima publicación.</p>
+</div>

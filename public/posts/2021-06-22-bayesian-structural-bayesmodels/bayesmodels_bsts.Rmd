@@ -1,0 +1,200 @@
+---
+title: "Bayesian Structural Models with Bayesmodels"
+author: "Alberto Almuiña"
+date: '2021-06-22T01:13:14-05:00'
+description: Introduction to bayesian structural models with Bayesmodels and Bsts as Backend.
+slug: bayesmodels-bsts
+tags:
+  - bayesmodels
+  - Bayesian Structural Time Series
+  - bsts
+  - State Space Models
+categories: 
+  - Time Series
+---
+
+<img src="/img/bayesian-structural-bayesmodels.es_files/logo-bayesmodels.png" width="147" height="170" align="right"/>
+
+
+⚠️ Warning: This post is a replica of the post [Fitting Bayesian structural time series with the bsts R package](https://www.unofficialgoogledatascience.com/2017/07/fitting-bayesian-structural-time-series.html) written by Steven L. Scott but adapted to the package [bayesmodels](https://github.com/AlbertoAlmuinha/bayesmodels). What we will do is to replicate the examples of that post adapted to this new package.
+
+## Introduction
+
+The __bayesmodels__ package is a framework for Bayesian models integrated with tidymodels. Like the whole tidymodels universe, the main idea of these packages is to translate existing packages to incorporate their algorithms with a syntax and definition that is always coherent (same argument in different packages, called the same etc). One of the packages (among many others) that incorporates bayesmodels is __bsts__, more specifically the bsts model (Bayesian Structural Time Series). The examples we are going to see in this post are the following:
+
+- [X] Nowcasting: includes descriptions of local linear trend and seasonal state models for short-term forecasts.
+
+- [X] Long-term Forecasting: describes a situation where local level and local linear trend models would be inappropriate. It offers a semi-local linear trend model as an alternative.
+
+## Nowcasting 🔬
+
+Scott and Varian (2014, 2015) used structural time series models to show how Google search data can be used to improve short-term forecasts ("nowcasts") of economic time series. The data consist of weekly initial claims for unemployment insurance in the US, as reported by the US Federal Reserve. Like many official statistics, they are released with a lag and are subject to revision. By the end of the week, the economic activity that determines these figures has taken place, but the official figures are not released until several days later. For economic decisions based on these and similar figures, it would be useful to have an early forecast of the current week's figure at the close of the week. Therefore, the result of this analysis is really a "forecast" of data that has already happened and not a "forecast" of data that will happen in the future. There are two sources of information about the current value $y_{t}$ in the initial claims series: the past $y_{t}-$ values that describe the behavior of the time series, and the contemporaneous predictors $x_{t}$ coming from a data source that is correlated with $y_{t}$ , but is available without the lag presented by $y_{t}$ . The structure of the time series shows an obvious trend (in which the 2008-2009 financial and housing crises are apparent), as well as a strong annual seasonal pattern. The external data source explored by Scott and Varian was Google trends search data, with search queries such as "how to apply for unemployment" having obvious relevance.
+
+### Packages loading 📚 and data visualization 📊    
+
+```{r, warning=FALSE, message=FALSE}
+library(bayesmodels)
+library(tidymodels)
+library(timetk)
+library(modeltime)
+
+data(iclaims)
+
+names(initial.claims)
+```
+
+As we can see, we have an object of class "zoo" with several unemployment series. To work with a tidy format such as the one used by __bayesmodels__, we must transform our data to table format. A very simple way to do this is to make use of the functionality provided by the `timetk::tk_tbl()` package:
+
+```{r}
+df <- timetk::tk_tbl(initial.claims)
+
+df %>% plot_time_series(.date_var = index, 
+                        .value = iclaimsNSA, 
+                        .smooth = FALSE)
+```
+
+The next step will be to specify the state components, for this we will make use of the `bsts` package functions that bayesmodels already loads by default:
+
+```{r}
+ss <- AddLocalLinearTrend(list(), df$iclaimsNSA)
+ss <- AddSeasonal(ss, df$iclaimsNSA, nseasons = 52)
+```
+
+Once we define the state, we build the model definition as follows (in __bayesmodels__ it is mandatory to always pass a date variable although it will not be used as a regressor variable in the model).
+
+```{r}
+modelo <- bayesian_structural_reg() %>%
+          set_engine("stan", state.specification = ss, niter = 1000) %>%
+          fit(iclaimsNSA ~ index, data = df)
+```
+
+Next, we can visualize the posterior distribution of the model:
+
+```{r}
+plot(modelo$fit$models$model_1)
+```
+
+We can also visualize the components that make up the model. Notice that the graph looks fuzzy because it shows the marginal posterior distribution at each time point.
+
+```{r}
+plot(modelo$fit$models$model_1, "components")
+```
+
+Now we can predict the next three months, we will make use of **Modeltime**:
+
+### Modeltime Workflow 💻
+
+First, we generate the Modeltime table in which we store the models (in this case we will only have one, but there could be more):
+
+```{r}
+(modeltime_tbl <- modeltime_table(modelo))
+```
+
+Next, we are going to generate the future dataset so that the predictions can be carried out. To do this, we will use the `timetk::future_frame()` function. We extend the dataset by 12 observations because, being a weekly periodicity, we will obtain the three desired months:
+
+```{r}
+df <- df %>% future_frame(.date_var = index, .length_out = 12, .bind_data = TRUE)
+
+future_tbl <- df %>% dplyr::filter(is.na(iclaimsNSA))
+
+prepared_tbl <- df %>% tidyr::drop_na()
+```
+
+Now it's time to predict...
+
+```{r, warning=FALSE, message=FALSE}
+modeltime_tbl %>%
+  modeltime_forecast(
+    new_data = future_tbl,
+    actual_data = prepared_tbl
+  ) %>%
+  plot_modeltime_forecast()
+```
+
+You can also achieve the same result by doing it the traditional way:
+
+```{r}
+predict(modelo$fit$models$model_1, h = 12) %>% plot(plot.original = 156)
+```
+
+What is the disadvantage of doing it this way? Well, for each method you would have to apply its specific syntax, however, with Modeltime you always apply the same syntax no matter which algorithm you use.
+
+## Long-Term Forecasting 🔭
+
+The idea of this example is to see a comparison between the different options that exist to model the trend of a series through the __bsts__ backend. The idea is to compare how the variance of two models using `AddLocalLinearTrend` and `AddSemilocalLinearTrend` varies. To do this, we will use the SP500 index data for Johnson & Johnson that we will download through the `tidyquant` package:
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyquant)
+
+df <- tq_get("JNJ") %>% dplyr::select(date, close) %>% purrr::set_names(c("index", "value"))
+
+df %>% plot_time_series(.date_var = index,
+                        .value = value,
+                        .smooth = FALSE,
+                        .title = "Johnson & Johnson")
+```
+
+We prepare the future set as we did in the previous example:
+
+```{r}
+df <- df %>% future_frame(.date_var = index, .length_out = 360, .bind_data = TRUE)
+
+future_tbl <- df %>% dplyr::filter(is.na(value))
+
+prepared_tbl <- df %>% tidyr::drop_na()
+```
+
+
+We are going to generate the two models we discussed, each with one of the different trends. For a detailed explanation of what each of the trends represents and what relationship there is between each of them and the variance I recommend you to read directly the brilliant [article](https://www.unofficialgoogledatascience.com/2017/07/fitting-bayesian-structural-time-series.html) by __bsts__ package author Steven L. Scott. He perfectly explains all these concepts and the differences between them.
+
+```{r}
+ss1 <- AddLocalLinearTrend(list(), prepared_tbl$value)
+
+modelo1 <- bayesian_structural_reg() %>%
+           set_engine("stan", state.specification = ss1, niter = 1000) %>%
+           fit(value ~ index, data = prepared_tbl)
+```
+
+Now we generate the second model:
+
+```{r}
+ss2 <- AddSemilocalLinearTrend(list(), prepared_tbl$value)
+modelo2 <- bayesian_structural_reg() %>%
+           set_engine("stan", state.specification = ss2, niter = 1000) %>%
+           fit(value ~ index, data = prepared_tbl)
+```
+
+### Modeltime Workflow 💻
+
+We generate the modeltime table first:
+
+```{r}
+(modeltime_tbl <- modeltime_table(modelo1, modelo2))
+```
+
+Let's look at the predictions:
+
+```{r, warning=FALSE, message=FALSE}
+modeltime_tbl %>%
+  modeltime_forecast(
+    new_data = future_tbl,
+    actual_data = prepared_tbl
+  ) %>%
+  plot_modeltime_forecast()
+```
+
+To see the comparison of variances, we use the `predict` function: 
+
+```{r}
+predict(modelo1$fit$models$model_1, horizon = 360) %>% plot(., plot.original = 360, ylim = range(.))
+```
+
+```{r}
+predict(modelo2$fit$models$model_1, horizon = 360) %>% plot(., plot.original = 360, ylim = range(.))
+```
+
+The forecast expectations of the two models are quite similar, but the forecast errors of the local linear trend model are implausibly wide, including a small but non-zero probability that the S&P 500 index could close near zero in the next 360 days. The error bars of the semi-local linear trend model are much more plausible and are more in line with the uncertainty observed over the life of the series so far.
+                  
+## Contact ✉
+
+Alberto Almuiña, [Linkedin](https://www.linkedin.com/in/alberto-almui%C3%B1a-b1176881/), [Twitter](https://twitter.com/AlmuinaAlberto), [Github](https://github.com/AlbertoAlmuinha), [Blog](https://albertoalmuinha.com/es/).

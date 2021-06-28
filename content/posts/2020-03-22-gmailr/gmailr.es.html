@@ -1,0 +1,35 @@
+---
+title: "Librería Gmailr"
+author: "Alberto Almuiña"
+date: '2020-03-22T21:13:14-05:00'
+description: Librería para usar Gmail desde R
+slug: gmailr_es
+categories: 
+- R-tips
+tags: 
+- gmailr
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<p>¡Hola!</p>
+<p>¿Has oído hablar del paquete gmailr? Te permite acceder a la API RESTful de Gmail desde R para que puedas enviar o leer correos electrónicos.</p>
+<p>Es muy útil en los procesos por lotes para notificarte si ha habido algún error o si todo ha terminado de la manera esperada.</p>
+<p>También se puede usar dentro de aplicaciones Shiny para enviar información a los usuarios (como documentación o recomendaciones).</p>
+<p>Puedes encontrar más información en el siguiente enlace: <a href="https://lnkd.in/gCwfNav" class="uri">https://lnkd.in/gCwfNav</a></p>
+<p>Aquí hay un pequeño ejemplo:</p>
+<pre class="r"><code>library(gmailr)
+
+options(gargle_oob_default = TRUE)
+options(gargle_oauth_cache = &quot;httr-oauth&quot;)
+gmailr::gm_auth_configure(key = Sys.setenv(&quot;cli&quot;), secret = Sys.setenv(&quot;secret&quot;), appname = &#39;DSpotyApp&#39;)
+gm_auth(email = &quot;albertogonzalezalmuinha@gmail.com&quot;)
+
+email&lt;-gm_mime() %&gt;%
+    gm_from(&#39;albertogonzalezalmuinha@gmail.com&#39;) %&gt;%
+    gm_to(&#39;albertogonzalezalmuinha@gmail.com&#39;) %&gt;%
+    gm_subject(&#39;Hello World&#39;) %&gt;%
+    gm_text_body(&#39;Hello World&#39;)
+
+gm_send_message(email)</code></pre>

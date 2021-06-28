@@ -1,0 +1,107 @@
+---
+title: 'Paquete R `crayon` '
+author: "Alberto Almuiña"
+date: '2020-05-04T21:13:14-05:00'
+description: Agregue color a la salida del terminal, cree estilos para notas, advertencias
+  o errores.
+slug: crayon_es
+categories: 
+- R-tips
+tags: 
+- crayon
+---
+
+****
+## `crayon` 
+****
+
+¿Cuántas veces creaste una función que imprimía ciertas notas, advertencias o errores en la pantalla? ¿Tuviste la sensación de que tus mensajes no eran lo suficientemente bonitos? Ahora, gracias al paquete de lápices de colores, puede mejorar el formato en el que imprime sus mensajes, agregando color y estilo. Veamos un ejemplo:
+
+
+```r
+library(crayon)
+
+cat(red('This is a red message'))
+
+cat(yellow('\nThis is a yellow message'))
+
+cat(bold('\nThis is a bold message'))
+
+cat(underline('\nThis is an underline message'))
+
+cat(bgGreen('\nThis is a background message'))
+```
+
+![](/img/crayon.es_files/crayon1.PNG)
+
+
+Este paquete ofrece las siguientes opciones:
+
+**Estilos**
+
+* reset
+* bold
+* blurred
+* italic
+* underline
+* inverse
+* hidden
+
+**Color de Texto**
+
+* black
+* red
+* green
+* yellow
+* blue
+* magenta
+* cyan
+* white
+* silver
+
+**Color de Fondo**
+
+* bgBlack
+* bgRed
+* bgGreen
+* bgYellow
+* bgBlue
+* bgMagenta
+* bgCyan
+* bgWhite
+
+Puede combinar las opciones con el operador '$':
+
+
+```r
+cat(bgBlack$white$bold('Black background with white message'))
+
+cat(bgYellow$silver$underline('\nYellor background with silver message'))
+```
+
+![](/img/crayon.es_files/crayon2.png)
+
+Los estilos también se pueden anidar, y luego el estilo interno tiene prioridad. Pruébelo con el operador '% +%':
+
+
+```r
+cat(red('This is a red line' %+% blue(' that becames blue ') %+% 'and red again'))
+```
+
+![](/img/crayon.es_files/crayon3.png)
+
+Finalmente, también puedes definir tus propios estilos:
+
+
+```r
+error<- red$bold
+warning<-yellow$italic
+note<-cyan
+
+cat(error('This is an error'))
+cat(warning('\nThis is a warning'))
+cat(note('\nThis is a note'))
+```
+
+![](/img/crayon.es_files/crayon4.png)
+

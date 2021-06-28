@@ -1,0 +1,339 @@
+---
+title: "Hyperparameter Tuning con Boostime"
+author: "Alberto Almuiña"
+date: '2021-06-18T02:13:14-05:00'
+description: Aprende a seleccionar los mejores hiperparámetros de los algoritmos de Boostime
+slug: parameter-tuning-boostime-es
+tags:
+  - boostime
+categories: 
+  - Time Series
+---
+
+
+## Introducción
+
+En este blog post vamos a ver como tunear los hiperparámetros asociados a la librería `boostime`. Para ello, nos centraremos en el famoso dataset M4 contenido en el paquete timetk. Este dataset incluye una muestra de cuatro series temporales mensuales (de las 100 mil totales que incluye la competición) desde que comenzó el 1 de Enero de 2018 hasta el 31 de Mayo de 2018. Puedes ver más información sobre la competición en el siguiente [enlace](https://mofc.unic.ac.cy/m4/).
+
+En primer lugar, vamos a cargar las librerías 📦 necesarias y a visualizar los datos 📈:
+
+```{r, warning=FALSE, message=FALSE}
+#devtools::install_github('catboost/catboost', subdir = 'catboost/R-package')
+#devtools::install_github("AlbertoAlmuinha/boostime")
+
+library(boostime)
+library(modeltime)
+library(tidymodels)
+library(timetk)
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sknifedatar)
+
+nest_data <- m4_monthly %>%
+  nest(data = -id)
+
+
+reactable(nest_data, details = function(index) {
+  data <- m4_monthly[m4_monthly$id == nest_data$id[index], c('date','value')] %>% 
+    mutate(value = round(value, 2))
+  div(style = "padding: 16px",
+      reactable(data, outlined = TRUE)
+  )
+}, defaultPageSize=5)
+
+```
+
+Vamos a mostrar también un resumen con la función `timetk::tk_summary_diagnostics()`⚙️️para ver el número de observaciones por cada id, la fecha de inicio y fin y algunos datos más que son de utilidad para comprobar si los datos están completos:
+
+```{r}
+m4_monthly %>% group_by(id) %>% tk_summary_diagnostics(date)
+```
+
+Como podemos ver, las series terminan todas en Junio de 2015 aunque no todas comienzan en la misma fecha. Como podemos observar, las dos primeras series comienzan en el año 1976 mientras que las dos últimas terminan en 1990y 1988 respectivamente. Esto será importante porque tendrá influencia a la hora de verificar las fechas de los resamples que se crearán en la estrategia de cross validation para las cuatro series temporales. 
+
+A continuación, vamos a visualizar gráficamente las cuatro series de tiempo del dataset M4. Para ello, utilizaremos la magnífica funcionalidad `automagic_tabs` del paquete __Sknifedatar__ (desarrollado por Rafael Zambrano y Karina Bartolomé, aquí pueden visitar el [repositorio](https://github.com/rafzamb/sknifedatar)). Esta funcionalidad permite generar tabs de manera sencilla, simplemente generando un nested data frame que contendrá la visualización que queremos presentar por cada id (por cada serie). 
+
+```{r}
+nest_data <- 
+  nest_data %>%
+  mutate(ts_plots = map(data, 
+                        ~ plot_time_series(.data = .x,
+                                           .date_var = date,
+                                           .value = value,
+                                           .smooth = FALSE
+                                          )))
+
+xaringanExtra::use_panelset()
+```
+
+`r automagic_tabs(input_data = nest_data, panel_name = "id", .output = "ts_plots",
+                  .layout = "l-page", fig.heigth=1, fig.width=10)`
+
+
+# Objetivos 📝
+
+Vamos a tratar de predecir los tres próximos años para cada una de las cuatro series, por lo tanto,al tratarse de una serie mensual nuestro forecast_horizon será de 36 meses. Vamos a definir esta variable y a generar este dataset futuro (con NA o missing values para las fechas futuras) el cuál será utilizado por el paquete __modeltime__ para generar las predicciones finales. Para ello, utilizamos la función `future_frame()` para extender el dataset actual:
+
+```{r}
+FORECAST_HORIZON <- 36
+
+m4_extended <- m4_monthly %>%
+    group_by(id) %>%
+    future_frame(
+        .length_out = FORECAST_HORIZON,
+        .bind_data  = TRUE
+    ) %>%
+    ungroup()
+
+m4_extended %>% tail(10)
+```
+
+A continuación, dividimos el dataset extendido en el dataset de train y el dataset futuro (este último será el que tiene en el campo "value" missing values, por lo tanto, con filtrar los missing values podremos obtenerlo).
+
+```{r}
+train_tbl <- m4_extended %>% drop_na()
+
+future_tbl <- m4_extended %>% filter(is.na(value))
+```
+
+Una vez tenemos definido nuestro horizonte de predicción y nuestros dataset futuro y de entreno, seleccionamos el algoritmo que vamos a utilizar para nuestro análisis, que en este caso será la combinación de Prophet + Catboost del paquete `boostime` (ojo, esto es una simplificación de la realidad, entre la aplicación del algoritmo y la generación de los datasets de entrenamiento y futuro hay pasos intermedios, que son obviados porque no son el propósito de este post). Lo que haremos será buscar los hiperparámetros óptimos para el algoritmo buscando por los posibles valores predefinidos que puede tomar cada hiperparámetro. De esta forma, si quisieramos optimizar el learning rate o el número de árboles utilizados por catboost, estos acabarían siendo controlados por las funciones por defecto en dials (aunque podría modificarse este comportamiento por defecto):
+
+```{r}
+dials::learn_rate()
+
+dials::trees()
+```
+
+
+## Generacion Resamples en Series de Tiempo 🆒
+
+El siguiente paso será crear una estrategia de validación cruzada para nuestras series temporales. Lo que haremos será crear seis splits de train/test para cada una de las diferentes series. Cada uno de de estos seis splits tendrá un test de una duración de tres años y habrá una separación respecto al anterior split de un año. En primer lugar, utilizaremos la función `plot_time_series_cv_plan()` del paquete timetk para visualizar la estrategia de validación cruzada. Debemos tener en cuenta que al mostrar la gráfica, veremos los splits de los cuatro id juntos, por lo que puede ser algo caótico, por lo que lo importante de esta visualización es corroborar que dónde se hace la partición entre train/test en cada split es correcto.
+ 
+```{r, message=FALSE}
+m4_resamples <- train_tbl %>%
+  time_series_cv(
+    date_var    = date, 
+    assess      = "3 years",
+    skip        = "1 year",
+    cumulative  = TRUE,
+    slice_limit = 6
+  )
+
+m4_resamples %>%
+  tk_time_series_cv_plan() %>% 
+  plot_time_series_cv_plan(.date_var = date, .value = value)
+```
+
+Modificando un poco los datos y utilizando de nuevo la funcionalidad __automagic_tabs__, podemos ver de forma precisa cada una de las particiones para cada una de las series:
+
+```{r}
+
+nest_data <- m4_resamples %>%
+  tk_time_series_cv_plan() %>% 
+  mutate(id = .id %>% str_c(id, sep = "-")) %>%
+  select(id, date, value, .key) %>%
+  nest(data = -id)
+
+nest_data <- 
+  nest_data %>%
+  mutate(ts_plots = map(data, 
+                        ~ plot_time_series(.data = .x,
+                                           .date_var = date,
+                                           .value = value,
+                                           .color_var = .key,
+                                           .smooth = FALSE
+                                          )))
+
+xaringanExtra::use_panelset()
+```
+
+`r automagic_tabs(input_data = nest_data, panel_name = "id", .output = "ts_plots",
+                  .layout = "l-page", fig.heigth=1, fig.width=10)`
+                  
+
+## Generación del Workflow 💻
+
+Para poder hacer tuning de los hiper parámetros del modelo seleccionado, haremos uso del framework __tidymodels__ y en particular de las estructuras denominadas `workflows`. Qué es un worfklow? Básicamente es un objeto de R que te permite almacenar en un único sitio las tareas de preprocesamiento, el modelaje y las tareas de postprocesamiento (normalmente, a través de __recipes__ y __parsnip__). Si quieres aprender más sobre este paquete, te recomiendo que visites su [repositorio](https://github.com/tidymodels/workflows).
+
+En primer lugar, vamos a generar la tarea de preprocesamiento con `recipes`. Esta tarea consta de los siguientes pasos:
+
+- [X] Definimos la fórmula que será utilizada por el modelo.
+
+- [X] Con la función `step_timeseries_signature()` generamos multitud de nuevos features a partir del campo fecha  (día de la semana, mes etc etc)
+
+- [X] Con el paso `step_rm()` borramos aquellos features que consideramos que no serán de interés para el algoritmo (Catboost)
+
+- [X] Generamos un one hot encoding de la variable día del mes y del id con la función `step_dummy()`
+
+
+```{r}
+recipe_parsnip <- recipe(value ~ ., training(m4_resamples$splits[[1]])) %>%
+  step_timeseries_signature(date) %>%
+  step_rm(matches("(.iso$)|(.xts$)|(day)|(hour)|(minute)|(second)|(am.pm)")) %>%
+  step_mutate(date_month = factor(date_month, ordered = TRUE)) %>%
+  step_dummy(all_nominal(), one_hot = TRUE)
+```
+
+## Definición del modelo 📊
+
+A continuación vamos a definir la especificación del modelo Prophet + Catboost a través del paquete __boostime__. Las principales características del modelo de Facebook, Prophet, son las siguientes:
+
+- [X] Es rápido, pues está construido con Stan, un lenguaje de programación de inferencia estadística escrito en C++.
+
+- [X] Por defecto, un modelo aditivo en el que las tendencias no lineales se ajustan a la estacionalidad anual, semanal y diaria, más los efectos de las vacaciones
+
+- [X] Prophet detecta automáticamente los cambios en las tendencias seleccionando "changepoints" de los datos.
+
+- [X] Un componente estacional anual modelado utilizando series de Fourier.
+
+- [X] Un componente estacional semanal usando variables dummy y una lista de vacaciones proporcionada por el usuario.
+
+A continuación, puedes ver como utilizamos un modelo multiplicativo. Puedes probar qué sucede si cambias esta opción a un modelo aditivo ;) También hemos desactivado las tres estacionalidades, pues dejamos la tarea de modelar la estacionalidad al algoritmo Catboost (De esta forma, será Prophet quién se encargue de "detrend" la serie).
+
+```{r}
+model_spec_prophet_catboost <- boostime::boost_prophet(growth = "linear",
+                                                       changepoint_num = tune(),
+                                                       changepoint_range = tune(),
+                                                       seasonality_yearly = FALSE,
+                                                       seasonality_daily = FALSE,
+                                                       seasonality_weekly = FALSE,
+                                                       season = "multiplicative",
+                                                       trees = 1000,
+                                                       tree_depth = tune(),
+                                                       learn_rate = tune(),
+                                                       mtry = tune()) %>%
+                              set_engine("prophet_catboost", verbose = 0)
+
+model_spec_prophet_catboost
+```
+A continuación, generamos el __worfkflow__ con todos los componentes necesarios. En este caso, unimos en un mismo objeto el modelo y el recipiente que contiene los pasos de preprocesamiento:
+
+```{r}
+wflw <- workflow() %>%
+    add_model(model_spec_prophet_catboost) %>%
+    add_recipe(recipe_parsnip)
+
+wflw
+```
+
+Finalmente, vamos a utilizar la función `tune_grid()` para lanzar las posibles configuraciones sobre los resamples y ver cuáles son los valores óptimos para los parámetros. La función tune_grid utilizará por defecto las métricas RMSE y RSQ para estimar el error, pero esto puede cambiarse utilizando `yardstick::metric_set()`, pero de este tema hablaremos en otro post. Como este proceso puede ser algo pesado, activaremos la opción de computación en paralelo a través de la función `control_grid()` con el argumento **"allow_par = TRUE".** Si quieres aprender más sobre esta funcionalidad, puedes leer este [artículo](https://www.business-science.io/code-tools/2021/06/17/modeltime-tune-parallel-processing.html) que he escrito con Matt Dancho sobre el tema.
+
+
+```{r, include=FALSE}
+set.seed(1234)
+tune_results <- tune_grid(
+    object     = wflw,
+    resamples  = m4_resamples,
+    param_info = parameters(wflw),
+    grid       = 5,
+    control    = control_grid(verbose = TRUE, allow_par = TRUE, parallel_over = "everything")
+)
+```
+
+
+Finalmente, seleccionamos el mejor basándonos en la métrica rmse de la siguiente manera y finalizamos el workflow con los parámetros seleccionados. Una vez hecho esto, entrenamos el workflow entero sobre los datos de entrenamiento.
+
+```{r}
+tuned_best <- tune_results %>%
+    select_best("rmse")
+
+fin_wflw <- wflw %>%
+    finalize_workflow(parameters = tuned_best)
+
+wflw_fit <- fin_wflw %>%
+    fit(training(m4_resamples$splits[[1]])) 
+```
+
+Una vez tenemos nuestro workflow entrenado, podemos ejecutar el workflow de **Modeltime** como habitualmente!
+
+## Modeltime Workflow 🎉
+
+El primer paso será gener una tabla modeltime_table en la que almacenemos nuestro objeto:
+
+```{r}
+(modeltime_tbl <- wflw_fit %>% modeltime_table())
+
+```
+
+A continuación, vamos a calibrar nuestro modelo con los datos de test. Esto servirá también para que posteriormente sea capaz de calcular los intervalos de confianza de las predicciones:
+
+```{r}
+calibration_tbl <- modeltime_tbl %>% 
+                   modeltime_calibrate(
+                     testing(m4_resamples$splits[[1]])
+                   )
+```
+
+El siguiente paso es realizar las predicciones sobre el conjunto de test y visualizarlas:
+
+```{r}
+nested_data <- calibration_tbl %>%
+               modeltime_forecast(
+                 new_data = testing(m4_resamples$splits[[1]]),
+                 actual_data = training(m4_resamples$splits[[1]]),
+                 keep_data = TRUE
+               ) %>% 
+              nest(data = -id) %>%
+              mutate(ts_plots = map(data,
+                                   ~plot_modeltime_forecast(
+                                     .data = .x
+                                   )))
+
+
+xaringanExtra::use_panelset()
+
+```
+
+`r automagic_tabs(input_data = nested_data, panel_name = "id", .output = "ts_plots",
+                  .layout = "l-page", fig.heigth=1, fig.width=10)`
+
+
+
+También podemos visualizar las métricas asociadas a esta predicción:
+
+```{r}
+calibration_tbl %>%
+  modeltime_accuracy(
+    new_data = testing(m4_resamples$splits[[1]])
+  ) %>%
+  table_modeltime_accuracy(.interactive = FALSE)
+```
+
+Finalmente, reentrenamos el modelo con todas las observaciones disponibles (para no perder las últimas observacioens que hacían parte del test y tienen más poder predictivo generalmente) con la función `modeltime_refit()` y predecimos los próximos 3 años sobre la tabla futura:
+
+```{r}
+refit_tbl <- calibration_tbl %>% 
+             modeltime_refit(
+               data = train_tbl,
+               control = control_refit(allow_par = F)
+             )
+
+nested_data <- refit_tbl %>%
+               modeltime_forecast(
+                 actual_data = train_tbl,
+                 new_data = future_tbl,
+                 keep_data = TRUE
+               ) %>%
+              nest(data = -id) %>%
+              mutate(ts_plots = map(data,
+                                   ~plot_modeltime_forecast(
+                                     .data = .x
+                                   )))
+
+xaringanExtra::use_panelset()
+
+```
+
+`r automagic_tabs(input_data = nested_data, panel_name = "id", .output = "ts_plots",
+                  .layout = "l-page", fig.heigth=1, fig.width=10)`
+                  
+
+## Agradecimientos 👏
+
+Quisiera agradecer especialmente a [Matt Dancho](https://www.linkedin.com/in/mattdancho/) por su contribución al mundo de series temporales, en especial por la creación de [Modeltime](https://github.com/business-science/modeltime). Sin dicho paquete, [Boostime](https://github.com/AlbertoAlmuinha/boostime) nunca habría sido posible. GRACIAS!
+                  
+                  
+## Contacto ✉
+
+Alberto Almuiña, [Linkedin](https://www.linkedin.com/in/alberto-almui%C3%B1a-b1176881/), [Twitter](https://twitter.com/AlmuinaAlberto), [Github](https://github.com/AlbertoAlmuinha), [Blog](https://albertoalmuinha.com/es/).

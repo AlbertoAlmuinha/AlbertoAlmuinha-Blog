@@ -1,0 +1,174 @@
+---
+title: "Boostime: Combinando ARIMA con Catboost"
+author: "Alberto Almuiña"
+date: '2021-05-30T02:13:14-05:00'
+description: Introducción a Boostime con un ejemplo práctico mediante ARIMA y Catboost.
+slug: boostime-arima-catboost-es
+tags:
+  - boostime
+  - arima
+  - catboost
+categories: 
+  - Time Series
+---
+
+# ¿Qué es Boostime?
+
+![](/img/boostime_arima_catboost.es_files/logo-boostime.png)
+
+`Boostime` es un paquete de R que surge para aplicar ciertos métodos sobre los residuos de un modelo para tratar de aumentar la precisión del mismo. Podríamos resumirlo de la siguiente manera: predicciones = modelo1(serie original) + modelo2(residuos)
+
+Para comprender este enfoque, son necesarias algunas nociones básicas sobre series temporales. En primer lugar, debemos ver la serie como una estructura aditiva o multiplicativa de componentes:
+
+$ Y_{t} = T_{t} + S_{t} + C_{t} + I_{t}$
+
+o bien:
+
+$ Y_{t} = T_{t} \cdot S_{t} \cdot C_{t} \cdot I_{t}$
+
+donde el valor de la serie en el tiempo t vendrá dado por la adición (o multiplicación) de las componentes de tendencia, estacionalidad, ciclicidad e irregularidad. Aunque no es objeto de esta publicación entrar en detalle a explicar cada una de estas componentes, sí es necesario remarcar que los tres primeros son patrones estructurales de los datos, mientras que el último son patrones no estructurales.
+
+Antes de continuar, debemos explicar brevemente también el concepto de ruido blanco.
+
+## ¿Qué es el ruido blanco?
+
+El ruido blanco es una serie de variables aleatorias no correladas entre sí, es decir, la relación entre las observaciones es aleatoria. Normalmente, se asume que el ruido blanco son variables aleatorias independientes que provienen de una distribución aleatoria identicamente distribuida (i.i.d) con media 0 y varianza <div>$\\sigma^{2}$. Veamos un ejemplo de ruido blanco:
+
+```{r}
+set.seed(123)
+ruido_blanco <- rnorm(500, 0, 1)
+plot.ts(ruido_blanco, col = "red", ylab = "", main = "Ruido Blanco")
+```
+
+Además del método visual, una forma de corroborar si una serie es ruido blanco es a través del gráfico de autocorrelación, donde deberemos comprobar que no existe correlación entre la serie y sus lags:
+
+```{r, warning=FALSE, message=FALSE}
+TSstudio::ts_cor(ts(ruido_blanco), lag.max = 24, type = "acf")
+```
+
+Como vemos en el gráfico superior, excepto el lag 12 están contenidos dentro del nivel de significancia por lo que se ve claramente que estamos ante una serie de ruido blanco. Otro método para ver que no existe correlación entre la serie y sus lags podría ser utilizar el test de Ljung-Box. La hipótesis nula de dicho test es que no existe correlación entre la serie y los lags, por lo que p-valor menor a 0.05 (para un nivel de significancia del 95%) indicaría la existencia de correlación entre las series. 
+
+```{r}
+p_values <- c()
+
+for(i in 1:24){
+  p_values[i] <- Box.test(ruido_blanco, lag = i, type = "Ljung-Box")$p.value
+}
+
+plot(p_values, ylim = c(0, 1))
+abline(h = 0.05, col = "red")
+```
+
+En ambas gráficas podemos ver claramente como se confirma lo esperado, que el ruido blanco efectivamente lo es!
+
+## ¿Qué pasa con los residuos?
+
+En `boostime` contamos con dos algoritmos principales (por el momento) para modelar la serie, Arima y Prophet. Estos modelos serán los encargados en primera instancia de intentar capturar los patrones estructurales de la serie (tendencia, estacionalidad y ciclicidad). En un escenario ideal, los residuos de estos modelos (recuerda, la diferencia entre el valor observado en la serie y el valor predicho por el modelo) deberían ser ruido blanco. Sin embargo, si observamos correlación en los residuos es un indicador de que el modelo no ha sido capaz de capturar todos los patrones estructurales, y es aquí donde entra en juego __boostime__. La idea es extraer esos patrones estructurales que el primer algoritmo no ha sido capaz de capturar mediante un segundo algoritmo, en este caso, (y por el momento), mediante `Catboost` o `LightGBM`. Los residuos de este segundo algoritmo deberían ser ruido blanco.
+
+
+# Ejemplo: AirPassengers
+
+La serie que vamos a intentar modelizar se llama "AirPassengers" y contiene información del número de pasajeros de avión desde el año 1949 hasta el año 1960. Veamos el gráfico:
+
+```{r}
+plot.ts(AirPassengers, col = "red")
+```
+
+Claramente podemos observar que nos encontramos ante una serie de tipo multiplicativo, como puede apreciarse al aumentar la amplitud año tras año en la componente estacional.
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+
+df <- tibble::tibble(date = zoo::as.Date(time(AirPassengers)),
+                     value = as.numeric(AirPassengers),
+                     trend = decompose(AirPassengers, type = "multiplicative")$trend %>% as.numeric(),
+                     seasonal = decompose(AirPassengers, type = "multiplicative")$seasonal %>% as.numeric())
+
+df <- df %>% 
+      timetk::future_frame(.date_var = date, .length_out = "2 years", .bind_data = TRUE) %>%
+      dplyr::mutate(month = lubridate::month(date))
+
+train <- df %>% dplyr::filter(!is.na(value))
+      
+test <- df %>% dplyr::filter(is.na(value)) 
+
+splits <- timetk::time_series_cv(train, assess = "1 year", cumulative = TRUE, slice_limit = 1)
+```
+
+Vamos a ver un gráfico sobre la distribución de los datos para entrenamiento y test:
+
+```{r}
+timetk::plot_time_series_cv_plan(splits, .date_var = date, .value = value)
+```
+
+Y vamos a ver una descomposición de la serie:
+
+```{r}
+TSstudio::ts_decompose(AirPassengers, type = "multiplicative")
+```
+
+## Modelos
+
+Vamos a modelar sólo en función del mes del año en el que nos encontramos para mostrar la diferencia entre usar el modelo Arima únicamente (el cuál tendrá correlación en los residuos) y usar adicionalmente Catboost para modelar los residuos. Veremos la diferencia en el ajuste.
+
+```{r}
+library(boostime)
+library(modeltime)
+library(tidymodels)
+
+splits <- splits$splits[[1]]
+
+arima_model <- arima_reg() %>%
+               set_engine("auto_arima") %>%
+               fit(value ~ date + month, data = training(splits))
+
+arima_catboost_model <- boost_arima() %>%
+                        set_engine("auto_arima_catboost", verbose = 0) %>%
+                        fit(value ~ date + month, data = training(splits))
+
+arima_model$fit$models$model_1 %>% forecast::checkresiduals()
+  
+```
+
+Claramente podemos ver que existe correlación entre los residuos del modelo Arima, como podemos ver en el gráfico de autocorrelación. Esto se ve confirmado por el p-valor del test de Ljung-Box. Por lo tanto, podemos concluir que este sería un buen caso para probar un modelo que modele también los residuos (como el segundo que hemos hecho). Vamos a comparar su desempeño con Modeltime.
+
+```{r}
+modeltime_tbl <- modeltime_table(arima_model,
+                                 arima_catboost_model)
+
+modeltime_tbl
+```
+
+Quizás en este punto te surja la pregunta al observar la tabla de porque los dos modelos arima detectados con el algoritmo __auto.arima__ no tienen el mismo orden si a priori hemos introducido los mismos datos. La respuesta está en que en el segundo caso el modelo arima se entrena sin regresores externos para así remover sólo la tendencia y dejar la tarea entera de la estacionalidad para el segundo modelo (en este caso, Catboost, quién utilizará los regresores externos). En nuestra experiencia de esta manera se obtendrán resultados mejores en la mayoría de casuísticas.
+
+
+```{r}
+modeltime_tbl %>% 
+  modeltime_calibrate(new_data = testing(splits)) %>%
+  modeltime_forecast(new_data = testing(splits),
+                     actual_data = training(splits)) %>%
+  plot_modeltime_forecast()
+```
+
+Claramente podemos observar como el modelo que combina Arima + Catboost ha conseguido captar la tendencia y el aumento de la amplitud en la estacionalidad mientras que el modelo Arima no ha sido capaz de modelar bien la estacionalidad. Veamos algunas métricas:
+
+```{r}
+modeltime_tbl %>% 
+  modeltime_calibrate(new_data = testing(splits)) %>%
+  modeltime_accuracy()
+```
+
+Finalmente, reentrenamos sobre la serie entera y predecimos los dos siguientes años:
+
+```{r}
+modeltime_tbl %>%
+  modeltime_calibrate(testing(splits)) %>%
+  modeltime_refit(data = df) %>%
+  modeltime_forecast(new_data = test, actual_data = train) %>%
+  plot_modeltime_forecast()
+```
+
+Como podemos observar, la combinación de Arima y Catboost sí consigue hacer un buen trabajo y modelar correctamente la tendencia y la estacionalidad de la serie mientras que el modelo Arima inicial no es capaz de modelar la estacionalidad correctamente.
+
+Si te ha gustado este post y el paquete `boostime`, puedes mostrar tu apoyo dandonos una estrella en nuestro repositorio de GitHub! :https://github.com/AlbertoAlmuinha/boostime
+

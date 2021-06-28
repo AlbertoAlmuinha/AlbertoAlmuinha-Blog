@@ -1,0 +1,85 @@
+---
+title: 'Paquete R `crayon` '
+author: "Alberto Almuiña"
+date: '2020-05-04T21:13:14-05:00'
+description: Agregue color a la salida del terminal, cree estilos para notas, advertencias
+  o errores.
+slug: crayon_es
+categories: 
+- R-tips
+tags: 
+- crayon
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<hr />
+<div id="crayon" class="section level2">
+<h2><code>crayon</code></h2>
+<hr />
+<p>¿Cuántas veces creaste una función que imprimía ciertas notas, advertencias o errores en la pantalla? ¿Tuviste la sensación de que tus mensajes no eran lo suficientemente bonitos? Ahora, gracias al paquete de lápices de colores, puede mejorar el formato en el que imprime sus mensajes, agregando color y estilo. Veamos un ejemplo:</p>
+<pre class="r"><code>library(crayon)
+
+cat(red(&#39;This is a red message&#39;))
+
+cat(yellow(&#39;\nThis is a yellow message&#39;))
+
+cat(bold(&#39;\nThis is a bold message&#39;))
+
+cat(underline(&#39;\nThis is an underline message&#39;))
+
+cat(bgGreen(&#39;\nThis is a background message&#39;))</code></pre>
+<p><img src="/img/crayon.es_files/crayon1.PNG" /></p>
+<p>Este paquete ofrece las siguientes opciones:</p>
+<p><strong>Estilos</strong></p>
+<ul>
+<li>reset</li>
+<li>bold</li>
+<li>blurred</li>
+<li>italic</li>
+<li>underline</li>
+<li>inverse</li>
+<li>hidden</li>
+</ul>
+<p><strong>Color de Texto</strong></p>
+<ul>
+<li>black</li>
+<li>red</li>
+<li>green</li>
+<li>yellow</li>
+<li>blue</li>
+<li>magenta</li>
+<li>cyan</li>
+<li>white</li>
+<li>silver</li>
+</ul>
+<p><strong>Color de Fondo</strong></p>
+<ul>
+<li>bgBlack</li>
+<li>bgRed</li>
+<li>bgGreen</li>
+<li>bgYellow</li>
+<li>bgBlue</li>
+<li>bgMagenta</li>
+<li>bgCyan</li>
+<li>bgWhite</li>
+</ul>
+<p>Puede combinar las opciones con el operador ‘$’:</p>
+<pre class="r"><code>cat(bgBlack$white$bold(&#39;Black background with white message&#39;))
+
+cat(bgYellow$silver$underline(&#39;\nYellor background with silver message&#39;))</code></pre>
+<p><img src="/img/crayon.es_files/crayon2.png" /></p>
+<p>Los estilos también se pueden anidar, y luego el estilo interno tiene prioridad. Pruébelo con el operador ‘% +%’:</p>
+<pre class="r"><code>cat(red(&#39;This is a red line&#39; %+% blue(&#39; that becames blue &#39;) %+% &#39;and red again&#39;))</code></pre>
+<p><img src="/img/crayon.es_files/crayon3.png" /></p>
+<p>Finalmente, también puedes definir tus propios estilos:</p>
+<pre class="r"><code>error&lt;- red$bold
+warning&lt;-yellow$italic
+note&lt;-cyan
+
+cat(error(&#39;This is an error&#39;))
+cat(warning(&#39;\nThis is a warning&#39;))
+cat(note(&#39;\nThis is a note&#39;))</code></pre>
+<p><img src="/img/crayon.es_files/crayon4.png" /></p>
+</div>

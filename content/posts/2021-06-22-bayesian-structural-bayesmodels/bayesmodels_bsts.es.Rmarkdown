@@ -1,0 +1,200 @@
+---
+title: "Modelos Bayesianos Estructurales con Bayesmodels"
+author: "Alberto Almuiña"
+date: '2021-06-22T01:13:14-05:00'
+description: Introducción a modelos bayesianos estructurales con Bayesmodels y Bsts como Backend.
+slug: bayesmodels-bsts-es
+tags:
+  - bayesmodels
+  - Bayesian Structural Time Series
+  - bsts
+  - State Space Models
+categories: 
+  - Time Series
+---
+
+<img src="/img/bayesian-structural-bayesmodels.es_files/logo-bayesmodels.png" width="147" height="170" align="right"/>
+
+
+⚠️ Atención: Este post es una réplica del post [Fitting Bayesian structural time series with the bsts R package](https://www.unofficialgoogledatascience.com/2017/07/fitting-bayesian-structural-time-series.html) escrito por Steven L. Scott pero adaptado al paquete [bayesmodels](https://github.com/AlbertoAlmuinha/bayesmodels). Lo que haremos será replicar los ejemplos de dicho post adaptados a este nuevo paquete.
+
+## Introducción
+
+El paquete __bayesmodels__ es un framework para modelos bayesianos soportado por tidymodels. Al igual que todo el universo tidymodels, la idea principal de estos paquetes es realizar una traducción sobre paquetes ya existentes para incorporar los algoritmos de los mismos con una sintaxis y definición que sea siempre coherente (mismo argumento en diferentes paquetes pasen a llamarse igual etc). Uno de los paquetes (entre otros muchos) que incorporta bayesmodels es __bsts__, más en concreto el modelo bsts (Bayesian Structural Time Series). Los ejemplos que vamos a ver en este post son los siguientes:
+
+- [X] Nowcasting: incluye descripciones de los modelos de tendencia lineal local y de estado estacional para predicciones a corto.
+
+- [X] Previsión a largo plazo: describe una situación en la que el nivel local y los modelos de tendencia lineal local serían inapropiados. Ofrece un modelo de tendencia lineal semilocal como alternativa.
+
+## Nowcasting 🔬
+
+Scott y Varian (2014, 2015) utilizaron modelos de series temporales estructurales para mostrar cómo los datos de búsqueda de Google pueden utilizarse para mejorar las previsiones a corto plazo ("nowcasts") de las series temporales económicas. Los datos consisten en las solicitudes iniciales semanales de seguro de desempleo en EE.UU., según lo informado por la Reserva Federal de EE.UU.. Como muchas estadísticas oficiales, se publican con retraso y están sujetas a revisión. Al final de la semana, la actividad económica que determina estas cifras ha tenido lugar, pero las cifras oficiales no se publican hasta varios días después. Para las decisiones económicas basadas en estas cifras y otras similares, sería útil disponer de una previsión temprana de la cifra de la semana en curso al cierre de la misma. Por lo tanto, el resultado de este análisis es realmente una "previsión" de los datos que ya han sucedido y no una "previsión" de los datos que sucederán en el futuro. Hay dos fuentes de información sobre el valor actual $y_{t}$ en la serie de reclamaciones iniciales: los valores pasados $y_{t}-\tau$ que describen el comportamiento de la serie temporal, y los predictores contemporáneos $x_{t}$ procedentes de una fuente de datos que está correlacionada con $y_{t}$ , pero que está disponible sin el retraso que presenta $y_{t}$ . La estructura de la serie temporal muestra una tendencia evidente (en la que se aprecian las crisis financiera y de la vivienda de 2008-2009), así como un fuerte patrón estacional anual. La fuente de datos externa explorada por Scott y Varian fueron los datos de búsqueda de Google trends, con consultas de búsqueda como "cómo solicitar el desempleo" que tienen una relevancia evidente.
+
+### Carga de librerías 📚 y visualización de datos 📊    
+
+```{r, warning=FALSE, message=FALSE}
+library(bayesmodels)
+library(tidymodels)
+library(timetk)
+library(modeltime)
+
+data(iclaims)
+
+names(initial.claims)
+```
+
+Como vemos, tenemos un objeto de clase "zoo" con varias series de desempleo. Para trabajar con un formato tidy como el que emplea __bayesmodels__, debemos transformar nuestros datos al formato tabla. Para ello, una manera muy sencilla de conseguirlo es hacer uso de la funcionalidad que ofrece el paquete `timetk::tk_tbl()`:
+
+```{r}
+df <- timetk::tk_tbl(initial.claims)
+
+df %>% plot_time_series(.date_var = index, 
+                        .value = iclaimsNSA, 
+                        .smooth = FALSE)
+```
+
+El siguiente paso será especificar las componentes del estado, para ello haremos uso de las funciones del paquete `bsts` que bayesmodels ya carga por defecto:
+
+```{r}
+ss <- AddLocalLinearTrend(list(), df$iclaimsNSA)
+ss <- AddSeasonal(ss, df$iclaimsNSA, nseasons = 52)
+```
+
+Una vez definimos el estado, construimos la definición del modelo de la siguiente manera (en __bayesmodels__ es obligatorio pasar siempre una variable de fecha aunque este no será utilizara como variable regresora en el modelo).
+
+```{r}
+modelo <- bayesian_structural_reg() %>%
+          set_engine("stan", state.specification = ss, niter = 1000) %>%
+          fit(iclaimsNSA ~ index, data = df)
+```
+
+A continuación, podemos visualizar la distribución posterior del modelo:
+
+```{r}
+plot(modelo$fit$models$model_1)
+```
+
+También podemos visualizar los componentes que conforman el modelo. Fíjate que el gráfico parece borroso porque muestra la distribución posterior marginal en cada punto de tiempo.
+
+```{r}
+plot(modelo$fit$models$model_1, "components")
+```
+
+Ahora podemos predecir los tres meses siguientes, para ellos, haremos uso de **Modeltime**:
+
+### Modeltime Workflow 💻
+
+En primer lugar, generamos la tabla de Modeltime en la que almacenamos los modelos (en este caso sólo tendremos uno, pero podrían ser más):
+
+```{r}
+(modeltime_tbl <- modeltime_table(modelo))
+```
+
+A continuación, vamos a generar el dataset futuro para que se puedan llevar a cabo las predicciones. Para ello, haremos uso de la función `timetk::future_frame()`. Extendemos el dataset en 12 observaciones porque al ser una periodicidad semanal asi obtendremos los tres meses deseados:
+
+```{r}
+df <- df %>% future_frame(.date_var = index, .length_out = 12, .bind_data = TRUE)
+
+future_tbl <- df %>% dplyr::filter(is.na(iclaimsNSA))
+
+prepared_tbl <- df %>% tidyr::drop_na()
+```
+
+Ahora es el turno de predecir...
+
+```{r, warning=FALSE, message=FALSE}
+modeltime_tbl %>%
+  modeltime_forecast(
+    new_data = future_tbl,
+    actual_data = prepared_tbl
+  ) %>%
+  plot_modeltime_forecast()
+```
+
+También puedes llegar al mismo resultado haciendolo de la forma tradicional:
+
+```{r}
+predict(modelo$fit$models$model_1, h = 12) %>% plot(plot.original = 156)
+```
+
+Cuál es la desventaja de hacerlo de esta forma? Pues que para cada método tendrías que aplicar su sintaxis específica, sin embargo, con Modeltime siempre aplicas la misma sintaxis utilices el algoritmo que utilices.
+
+## Previsión a largo plazo 🔭
+
+La idea de este ejemplo es ver una comparativa entre las distintas opciones que existen para modelar la tendencia de una serie a través del backend __bsts__. La idea es comparar como varía la varianza de dos modelos que utilizan `AddLocalLinearTrend` y `AddSemilocalLinearTrend`. Para ello, usaremos los datos del índice SP500 para Johnson & Johnson que descargaremos a través del paquete `tidyquant`:
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyquant)
+
+df <- tq_get("JNJ") %>% dplyr::select(date, close) %>% purrr::set_names(c("index", "value"))
+
+df %>% plot_time_series(.date_var = index,
+                        .value = value,
+                        .smooth = FALSE,
+                        .title = "Johnson & Johnson")
+```
+
+Preparamos el conjunto futuro al igual que hicimos en el ejemplo anterior:
+
+```{r}
+df <- df %>% future_frame(.date_var = index, .length_out = 360, .bind_data = TRUE)
+
+future_tbl <- df %>% dplyr::filter(is.na(value))
+
+prepared_tbl <- df %>% tidyr::drop_na()
+```
+
+
+Vamos a generar los dos modelos que comentamos, cada uno con una de las diferentes tendencias. Para una explicación detallada de lo que representa cada una de las tendencias y qué relación hay entre cada una de ellas y la varianza os recomiendo leer directamente el genial [artículo](https://www.unofficialgoogledatascience.com/2017/07/fitting-bayesian-structural-time-series.html) del autor del paquete __bsts__ Steven L. Scott. El explica perfectamente todos estos conceptos y las diferencias entre ellos.
+
+```{r}
+ss1 <- AddLocalLinearTrend(list(), prepared_tbl$value)
+
+modelo1 <- bayesian_structural_reg() %>%
+           set_engine("stan", state.specification = ss1, niter = 1000) %>%
+           fit(value ~ index, data = prepared_tbl)
+```
+
+Ahora generamos el segundo modelo:
+
+```{r}
+ss2 <- AddSemilocalLinearTrend(list(), prepared_tbl$value)
+modelo2 <- bayesian_structural_reg() %>%
+           set_engine("stan", state.specification = ss2, niter = 1000) %>%
+           fit(value ~ index, data = prepared_tbl)
+```
+
+### Modeltime Workflow 💻
+
+Generamos la tabla de modeltime en primer lugar:
+
+```{r}
+(modeltime_tbl <- modeltime_table(modelo1, modelo2))
+```
+
+Veamos las predicciones:
+
+```{r, warning=FALSE, message=FALSE}
+modeltime_tbl %>%
+  modeltime_forecast(
+    new_data = future_tbl,
+    actual_data = prepared_tbl
+  ) %>%
+  plot_modeltime_forecast()
+```
+
+Para ver la comparación de las varianzas, recurrimos a la función `predict`: 
+
+```{r}
+predict(modelo1$fit$models$model_1, horizon = 360) %>% plot(., plot.original = 360, ylim = range(.))
+```
+
+```{r}
+predict(modelo2$fit$models$model_1, horizon = 360) %>% plot(., plot.original = 360, ylim = range(.))
+```
+
+Las expectativas de previsión de los dos modelos son bastante similares, pero los errores de previsión del modelo de tendencia lineal local son inverosímilmente amplios, incluyendo una probabilidad pequeña pero no nula de que el índice S&P 500 pueda cerrar cerca de cero en los próximos 360 días. Las barras de error del modelo de tendencia lineal semilocal son mucho más plausibles y se ajustan más a la incertidumbre observada durante la vida de la serie hasta ahora.
+                  
+## Contacto ✉
+
+Alberto Almuiña, [Linkedin](https://www.linkedin.com/in/alberto-almui%C3%B1a-b1176881/), [Twitter](https://twitter.com/AlmuinaAlberto), [Github](https://github.com/AlbertoAlmuinha), [Blog](https://albertoalmuinha.com/es/).

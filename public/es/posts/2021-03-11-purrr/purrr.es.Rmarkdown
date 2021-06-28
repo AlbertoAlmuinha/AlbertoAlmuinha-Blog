@@ -1,0 +1,329 @@
+---
+title: "Por qué deberías aprender a usar purrr"
+author: "Alberto Almuiña"
+date: '2021-03-11T02:13:14-05:00'
+description: Introducción a la programación funcional con `purrr`
+slug: purrr-es
+tags:
+- purrr
+- functional programming
+categories: 
+- tidyverse
+---
+
+## Por qué deberías aprender a usar purrr?
+
+Según la propia descripción que se hace del paquete en la página oficial del mismo, "purrr mejora el conjunto de herramientas de programación funcional (FP) de R al proporcional un conjunto de herramientas completo y consistente para trabajar con funciones y vectores".
+
+Pero entonces, qué es un lenguaje de programación funcional? Según explica Hadley en [Advanced R](https://adv-r.hadley.nz/fp.html) hay muchas definiciones que hacen funcional un lenguaje, si bien podemos encontrar dos características comunes a todas ellas:
+
+-   *Funciones de primera clase:* Esto significa que las funciones se comportan como cualquier otra estructura. Es decir, puedes almacenarla en una variable, almacenarlas en listas, pasarlas como argumentos a otras funciones, crearlas dentro de otras funciones o incluso devolverlas como resultado de una función.
+
+-   Muchos lenguajes funcionales requieren también *funciones puras*. Una función se considera pura si satisface las siguientes dos características:
+
+    1.  La salida sólo depende de los argumentos de la entrada, por lo que si llamas a la función con los mismos argumentos, obtendrás el mismo resultado. Funciones como `run.if()` o `read.csv()` no son puras.
+
+    2.  La función no tiene efectos secundarios como cambiar el valor de una variable global o escribir a disco. Funciones como `print()` o `<-` no son puras.
+
+Estrictamente hablando, R no es un lenguaje funcional porque no requiere que escribas funciones puras. Sin embargo, en partes de tu código si puedes adoptar un estilo funcional y de hecho deberías. Pero, qué es un estilo funcional? Un estilo funcional consiste en descomponer un problema grande en piezas más pequeñas y resolver cada una de esas piezas a partir de una función o un conjunto de funciones. Lo que se consigue es descomponer el problema en funciones aisladas que operan independientemente y que son más fáciles de entender. Existen tres técnicas para descomponer el problema en piezas más pequeñas:
+
+-   Los *funcionales* son funciones que toman una función como argumento que resuelve el problema para un solo input y lo generaliza para manejar cualquier número de inputs. Un ejemplo sería la función `lapply()`.
+
+-   Factorías de funciones: funciones que crean otras funciones.
+
+-   Operadores de funciones: funciones que toman como argumento una función y devuelven como salida otra función.
+
+En este post nos centraremos en los funcionales a través del paquete `purrr`.
+
+## Funcionales con `purrr`
+
+Un funcional es una función que toma una función como entrada y devuelve un vector como salida (o al menos esa era la idea en un inicio, actualmente la salida es modulable según el tipo de funcional. De esta forma, podemos obtener funcionales que nos devuelvan una lista, otros que nos devuelvan un vector o un data frame). El funcional fundamental en purrr es `map()`, que recibe como argumentos un vector, una lista o un data frame y una función y aplica dicha función a cada elemento del vector, lista o data frame y devuelve el resultado en una lista. Para tener una mejor intuición, veamos una imagen:
+
+![Fuente: Advanced R](/img/purrr.es_files/map.PNG)
+
+Lo que sucede es lo siguiente:
+
+-   Si el argumento de entrada es un vector, `purrr::map()` aplicará la función pasada como argumento a cada elemento del vector.
+
+-   Si el argumento de entrada es una lista, entonces map() aplicará la función pasada como argumento a cada elemento de la lista.
+
+-   Por el contrario, si el argumento de entrada es un data frame, entonces map() aplicará la función a cada columna del mismo.
+
+Veamos un ejemplo sencillo:
+
+```{r, warning=FALSE, message=FALSE}
+library(purrr)
+library(tidyverse)
+
+double <- function(x) x*2
+
+purrr::map(c(1:3), double)
+
+purrr::map(list(2, 4, 10), double)
+```
+
+Debemos tener en cuenta que `purrr::map` siempre devuelve una lista, pero en ocasiones esto no es lo más cómodo ni práctico. Si conocemos de antemano la salida que deseamos, podemos utilizar alguna de las variantes de map (existen más de las que se muestran en el siguiente ejemplo, te recomiendo que explores las opciones existentes tecleando `map_`):
+
+```{r}
+purrr::map_dbl(c(1:3), double)
+
+purrr::map_chr(c(1:3), double)
+
+purrr::map_lgl(c(1:3), is.na)
+```
+
+Otra opción es utilizar funciones anónimas como parámetro, de la siguiente forma:
+
+```{r}
+purrr::map(c(1:3), function(x) x*2)
+```
+
+Incluso, si no te apetece teclear tanto, purrr ofrece un shortcut para que puedas escribir tus funciones anónimas de la siguiente manera:
+
+```{r}
+purrr::map(c(1:3), ~{.x*2})
+```
+
+Para entender lo que está sucediendo, vamos a hacer uso de la función `purrr::as_mapper()`:
+
+```{r}
+purrr::as_mapper(~{.x*2})
+```
+
+Los argumentos de la función parecen un poco extraños pero te permiten hacer referencia a `.` para funciones de un argumento, a `.x e .y` para funciones de dos argumentos y a `..1, ..2, ..3 etc` para una función con un número arbitrario de argumentos. `.` permanece por compatibilidad pero no se recomienda utilizarlo.
+
+Para utilizar argumentos adicionales de una función, existen dos maneras para hacerlo: la primera es a través de una función anónima:
+
+```{r}
+purrr::map_dbl(list(1:5, c(1, 4, NA)), 
+               ~ mean(.x, na.rm = TRUE))
+```
+
+La segunda es utilizar los argumentos después de la propia función. Esto sucede porque los argumentos son pasados a la función a través del argumento `...`. Como una imagen vale más que mil palabras, mejor veámoslo de forma gráfica:
+
+![Fuente: Advanced R](/img/purrr.es_files/map_args.PNG)
+
+```{r}
+purrr::map_dbl(list(1:5, c(1, 4, NA)),
+               mean, na.rm = TRUE)
+```
+
+Estos son los fundamentos a partir de los cuales puedes comenzar a utilizar los funcionales de purrr de una forma segura. El paso a los funcionales que iteran sobre múltiples argumentos como input en vez de sobre uno (es decir, el paso a la generalización) es trivial, como veremos a continuación.
+
+## Los variantes de map
+
+`purrr` nos ofrece mucha versatilidad a la hora de iterar y para ello nos brinda otro set de funciones cuyo objetivo es tomar como input una función y aplicarla a cada par de elementos extraídos o bien de dos vectores, o bien de dos listas. La función básica de este set de funciones es `purrr::map2()`, que análogamente a map(), siempre retornará una lista. Para entenderlo mejor, vamos con un ejemplo muy sencillo. Vamos a intentar sumar dos vectores elemento a elemento:
+
+```{r}
+a <- c(1, 2, 3)
+b <- c(1, 2, 3)
+
+add <- function(x, y) {x+y}
+
+purrr::map2(a, b, add)
+```
+
+Un poco engorroso verdad? Pues sí! Vamos a aplicar todo lo aprendido en las secciones anteriores. En primer lugar, podemos devolver un vector si sabemos el tipo que deseamos devolver, en este caso 'double', simplemente usando las variantes de la función básica con `map2_*tipo-deseado*`:
+
+```{r}
+a <- c(1, 2, 3)
+b <- c(1, 2, 3)
+
+add <- function(x, y) {x+y}
+
+purrr::map2_dbl(a, b, add)
+```
+
+Esto es todo? No, recuerda que podemos usar funciones anónimas para no escribir tanto código, cuando usamos funciones tan cortas:
+
+```{r}
+purrr::map2_dbl(1:3, 1:3, ~{.x +.y})
+```
+
+El siguiente paso en generalización sería el uso de la función `purrr::pmap()`, aunque posiblemente a estas alturas ya intuyas como funciona esta función, verdad? La idea aquí es pasar una lista como argumento que contenga en su interior X vectores, listas o data frames sobre los que se aplicará la función pasada como argumento. Para ello, imaginemos que quiero sumar los elementos de tres vectores, la generalización del ejemplo anterior:
+
+```{r}
+a <- c(1, 2, 3)
+b <- c(1, 2, 3)
+c <- c(1 ,2, 3)
+
+add <- function(x, y, z) {x + y + z}
+
+purrr::pmap(list(a, b, c), add)
+```
+
+Ahora sólo es cuestión de simplificar aplicando la misma lógica que hasta ahora, seleccionar la función *pmap\_* que nos devuelva el resultado con el formato que nosotros queramos y utilizar una función anónima para que sea menos engorroso (recuerda que cuando había más de dos argumentos, la sintaxis correcta dentro de la función anónima era *..1, ..2, ..3, ..4 etc* para identificar los correspondientes argumentos):
+
+```{r}
+a <- c(1, 2, 3)
+b <- c(1, 2, 3)
+c <- c(1 ,2, 3)
+
+purrr::pmap_dbl(list(a, b, c), ~{..1 + ..2 + ..3})
+```
+
+Otro set de funciones muy interesantes son `purrr::walk()` y sus variantes (walk2, pwalk). Estas funciones nacen porque en ocasiones no estamos interesados en que la función nos devuelva un resultado, si no en los efectos secundarios que produce la función. Este es el caso de funciones como print(), message(), plot() o write.csv(). Cuando usamos este tipo de funciones con `purrr::map()` no sólo obtenemos el efecto secundario deseado, si no que ademas obtendremos una lista con valores nulos. Fijémonos en el siguiente ejemplo:
+
+```{r}
+saludar <- function(.nombre) {message(paste('Hola ', .nombre))}
+nombres <- c('Alberto', 'Diana')
+
+purrr::map(nombres, saludar)
+```
+
+Nuestro interés radica en imprimir el mensaje, pero no deseamos obtener ningún resultado de vuelta, y aquí es donde entra en juego `walk()`. Esta función básicamente lo que hace internamente es llamar a la función *map* y devolver los resultados de manera invisible:
+
+![Fuente: Advanced R](/img/purrr.es_files/walk.PNG)
+
+```{r}
+body(walk)
+
+purrr::walk(nombres, saludar)
+```
+
+Otro caso de uso muy común es cuando queremos guardar en disco varios ficheros en varias rutas. Para ello utilizaremos la función `purrr:walk2()`, que tomará como argumentos los data frames a guardar, las rutas y la función que se encargará de realizar dicha tarea:
+
+```{r}
+temp <- tempfile()
+dir.create(temp)
+
+cyls <- split(mtcars, mtcars$cyl)
+paths <- file.path(temp, paste0("cyl-", names(cyls), ".csv"))
+
+purrr::walk2(cyls, paths, write.csv)
+
+dir(temp)
+```
+
+Básicamente, lo que está sucediendo cuando llamamos a walk2 es lo siguiente: write.csv(cyls[[1]], paths[[1]]), write.csv(cyls[[2]], paths[[2]]), write.csv(cyls[[3]], paths[[3]]).
+
+Otra función muy interesante es `purrr::modify()`, la cuál funciona como map() pero te garantiza que la salida de tu función tendrá el mismo tipo que tu entrada. Esto significa que si tu entrada es un vector, tu salida también lo será. Si tu entrada es un data frame, tu salida también lo será. Veamos un ejemplo:
+
+```{r}
+purrr::modify(c(1, 2, 3), ~ .x * 2)
+```
+
+```{r}
+purrr::modify(list(1, 2, 3), ~ .x * 2)
+```
+
+```{r}
+purrr::modify(data.frame(valor = c(1, 2, 3)), ~ .x * 2)
+```
+
+## Ejemplo Práctico: Planetas Star Wars
+
+Para ahondar más en el universo `purrr` vamos a ver como podríamos utilizar lo aprendido y otras funciones adicionales del paquete para explorar una lista que contiene información sobre 61 planetas de la saga de Star Wars. Vamos a ver en primer lugar la información sobre el primer planeta para saber qué información nos podemos encontrar:
+
+```{r}
+library(repurrrsive)
+
+planets<-repurrrsive::sw_planets
+planets[[1]]
+```
+
+Una ventaja de purrr es que es pipe-friendly, por lo que podremos utilizar sus funcionales con el famoso pipe de magritrr. Por ejemplo, vamos a ver cuáles son los nombres de los 61 planetas de Star Wars:
+
+```{r}
+planets %>% purrr::map_chr(~.$name)
+```
+
+Como ves, con purrr también podemos extraer elementos de una lista u objeto sobre el que iteremos de forma sencilla! Compliquemos un poco más las cosas. Vamos a contar el número de caracteres de cada nombre:
+
+```{r}
+planets %>% purrr::map_chr(~.$name) %>% purrr::map_int(~str_length(.x))
+```
+
+Y si ahora me quiero quedar con aquellos que contengan más de 10 caracteres? Claro! purrr ofrece dos funciones, `keep` y `discard` que precisamente nos permiten seleccionar o descartar elementos en base a un predicado:
+
+```{r}
+planets %>% purrr::map_chr(~.$name) %>% purrr::map_int(~str_length(.x)) %>% purrr::keep(~ .x > 8)
+```
+
+Aunque también puedes filtrar directamente la lista y quedarte con los elementos que te interesan. Qué significa esto? Que quiero quedarme con los planetas de la lista cuyos nombres tengan más de 8 caracteres. Hagámoslo:
+
+```{r}
+lista_reducida <- planets %>% purrr::keep(~str_length(.$name)>8)
+
+length(lista_reducida)
+```
+
+Otra función interesante es `pluck`, la cual te permite extraer elementos de una lista de forma flexible. En este caso simplemente extraemos el primer elemento:
+
+```{r}
+lista_reducida %>% purrr::pluck(1) #Equivalente a lista_reducida[[1]]
+```
+
+Otras funciones muy interesantes son `partial()` y `compose()`. partial() te permite modificar una función para asignar unos valores a los parámetros que te interesen, mientras que compose te permite concatenar varias funciones para que se ejecuten en un determinado orden. Veamos un ejemplo de cómo poder aplicar estas funciones. Vamos a coger el campo terrain y vamos a sustituir las comas por guiones y posteriormente pondremos los caracteres con formato titulo (la primera letra de cada palabra en mayúscula):
+
+```{r}
+string_replace <- purrr::partial(str_replace_all, pattern = ',', replacement = '-')
+
+.f <- purrr::compose(str_to_title, string_replace)
+
+planets %>% purrr::map_chr(~.$terrain) %>% purrr::map_chr(.f)
+```
+
+## Ejemplo Práctico: Nested Gapminder
+
+Finalmente, vamos a ver un ejemplo práctico de como combinar un dataset anidado (nested) con los funcionales de `purrr` para explotar toda la potencia de ambas soluciones. Pero en primer lugar, qué es un data frame anidado? Básicamente, es un data frame que tiene una o más columnas formadas por listas de data frames. Para que quede claro el concepto, veamos un ejemplo:
+
+```{r}
+(gap_nested <- repurrrsive::gap_nested)
+```
+
+Como se puede observar, tenemos un dataset (tibble) en el que por cada continente y país, en la columna 'data' tenemos almacenado otro dataset (tibble). Un buen lugar para aprender más sobre este tipo de datasets es en la propia página de [tidyr](https://tidyr.tidyverse.org/articles/nest.html) (ya que se crean con la función tidyr::nest). Para extraer la información en estos tibbles en la columna data, podemos utilizar la función *pluck* aprendida anteriormente. Por ejemplo, vamos a ver los datos guardados para Afghanistan:
+
+```{r}
+gap_nested %>% pluck('data', 1)
+```
+
+Una de las grandes ventajas de este formato es que nos permite aplicar los funcionales de purrr dentro del propio data frame, por ejemplo, podemos aplicar un modelo ARIMA con los datos de cada tibble en la columna 'data' para modelar la esperanza de vida en función de las otras variables: la población y el pib per cápita. Lo que hacemos es guardar en una nueva columna denominada 'arima' la información de cada modelo:
+
+```{r}
+library(modeltime)
+library(tidymodels)
+
+gap_nested <- gap_nested %>%
+              mutate(arima = map(data, ~arima_reg(mode = 'regression') %>%
+                                  set_engine('auto_arima') %>%
+                                  fit(lifeExp ~ pop + gdpPercap + as.Date(ISOdate(year, 1, 1)), data = .x)))
+              
+```
+
+Veamos el modelo ARIMA seleccionado para la esperanza de vida en Afghanistán:
+
+```{r}
+gap_nested %>% pluck('arima', 1)
+```
+
+Ahora podemos extraer los valores del modelo para el periodo de entrenamiento y almacenarlos en otra columna:
+
+```{r}
+gap_nested <- gap_nested %>% 
+              mutate(fitted = map(arima, ~.$fit$models$model_1$fitted))
+
+gap_nested %>% pluck('fitted', 1)
+
+```
+
+Finalmente, vamos a calcular el rsq para cada modelo a partir de los fitted values y de los valores observados de la esperanza de vida. Como para cada país y continente obtendremos un único valor, usaremos la función `tidyr::unnest()` al final para poder visualizar directamente este valor (y que no quede anidado en una lista en la columna 'rsq' que vamos a crear):
+
+```{r}
+gap_nested <- gap_nested %>%
+              mutate(rsq = map2(fitted, 
+                                data, 
+                                function(.fitted, .data) {yardstick::rsq_vec(as.vector(.fitted), .data$lifeExp)})) %>%
+              tidyr::unnest(rsq)
+
+gap_nested
+```
+
+
+ Como se puede ver, la combinación de `purrr` y `tidyr::nest` es muy poderosa para encontrar soluciones elegantes y eficientes. Esto es sólo es un esbozo de lo que se puede hacer con los funcionales del paquete, pero purrr ofrece muchas más funcionalidades que sin duda te recomiendo que explores. Desde luego, una vez que comprendes el funcionamiento de este paquete, dificilmente querrás abandonarlo en el futuro.        
+
+
+
+
+
+

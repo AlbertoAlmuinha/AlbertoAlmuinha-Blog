@@ -1,0 +1,342 @@
+---
+title: "Hyperparameter Tuning with Boostime"
+author: "Alberto Almuiña"
+date: '2021-06-28T02:13:14-05:00'
+description: Learn how to select the best hyperparameters for the Boostime algorithms.
+slug: parameter-tuning-boostime
+tags:
+  - boostime
+categories: 
+  - Time Series
+---
+
+
+## Introduction
+
+In this blog post we are going to see how to tune the hyperparameters associated to the `boostime` package. For this purpose, we will focus on the famous M4 dataset contained in the timetk package. This dataset includes a sample of four monthly time series (out of the 100 thousand total included in the competition) since it started on January 1, 2018 until May 31, 2018. You can find more information about the competition in the following [link](https://mofc.unic.ac.cy/m4/).
+
+First, we are going to load the necessary packages 📦 and to visualize the data 📈:
+
+```{r, warning=FALSE, message=FALSE}
+#devtools::install_github('catboost/catboost', subdir = 'catboost/R-package')
+#devtools::install_github("AlbertoAlmuinha/boostime")
+
+library(boostime)
+library(modeltime)
+library(tidymodels)
+library(timetk)
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(sknifedatar)
+
+nest_data <- m4_monthly %>%
+  nest(data = -id)
+
+
+reactable(nest_data, details = function(index) {
+  data <- m4_monthly[m4_monthly$id == nest_data$id[index], c('date','value')] %>% 
+    mutate(value = round(value, 2))
+  div(style = "padding: 16px",
+      reactable(data, outlined = TRUE)
+  )
+}, defaultPageSize=5)
+
+```
+
+We will also show an overview with the function `timetk::tk_summary_diagnostics()`⚙️️ to see the number of observations for each id, the start and end date and some other data that are useful to check if the data are complete:
+
+```{r}
+m4_monthly %>% group_by(id) %>% tk_summary_diagnostics(date)
+```
+
+As we can see, the series all end in June 2015 although they do not all start on the same date. As we can see, the first two series start in the year 1976 while the last two series end in 1990 and 1988 respectively. This will be important because it will have an influence when verifying the dates of the resamples that will be created in the cross validation strategy for the four time series. 
+
+Next, we are going to visualize graphically the four time series of the M4 dataset. To do so, we will use the great `automagic_tabs` functionality of the __Sknifedatar__ package (developed by Rafael Zambrano and Karina Bartolomé, you can visit here the [repository](https://github.com/rafzamb/sknifedatar)). This functionality allows to generate tabs in a simple way, simply by generating a nested data frame that will contain the visualization that we want to present for each id (for each series). 
+
+```{r}
+nest_data <- 
+  nest_data %>%
+  mutate(ts_plots = map(data, 
+                        ~ plot_time_series(.data = .x,
+                                           .date_var = date,
+                                           .value = value,
+                                           .smooth = FALSE
+                                          )))
+
+xaringanExtra::use_panelset()
+```
+
+`r automagic_tabs(input_data = nest_data, panel_name = "id", .output = "ts_plots",
+                  .layout = "l-page", fig.heigth=1, fig.width=10)`
+
+
+# Goals 📝
+
+We are going to try to forecast the next three years for each of the four series, therefore, being a monthly series our forecast_horizon will be 36 months. We are going to define this variable and generate the future dataset (with NA or missing values for the future dates) which will be used by the __modeltime__ package to generate the final forecasts. To do this, we use the `future_frame()` function to extend the current dataset:
+
+```{r}
+FORECAST_HORIZON <- 36
+
+m4_extended <- m4_monthly %>%
+    group_by(id) %>%
+    future_frame(
+        .length_out = FORECAST_HORIZON,
+        .bind_data  = TRUE
+    ) %>%
+    ungroup()
+
+m4_extended %>% tail(10)
+```
+
+Next, we divide the extended dataset into the train dataset and the future dataset (the latter will be the one with missing values in the "value" field, therefore, by filtering the missing values we will be able to obtain it).
+
+```{r}
+train_tbl <- m4_extended %>% drop_na()
+
+future_tbl <- m4_extended %>% filter(is.na(value))
+```
+
+Once we have defined our prediction horizon and our future and training datasets, we select the algorithm we are going to use for our analysis, which in this case will be the combination of Prophet + Catboost from the `boostime` package (note, this is a simplification of reality, between the application of the algorithm and the generation of the training and future datasets there are intermediate steps, which are ignored because they are not the purpose of this post). What we will do is to look for the optimal hyperparameters for the algorithm by searching for the possible predefined values that each hyperparameter can take. This way, if we wanted to optimize the learning rate or the number of trees used by catboost, these would end up being controlled by the default functions in dials (although this default behavior could be modified):
+
+```{r}
+dials::learn_rate()
+
+dials::trees()
+```
+
+
+## Time Series Resamples Generation 🆒
+
+The next step will be to create a cross-validation strategy for our time series. What we will do is to create six train/test splits for each of the different time series. Each of these six splits will have a test duration of three years and there will be a separation with respect to the previous split of one year. First, we will use the `plot_time_series_cv_plan()` function of the timetk package to visualize the cross-validation strategy. We must keep in mind that when displaying the plot, we will see the splits of the four ids together, so it can be a bit chaotic, so the important thing about this visualization is to corroborate that where the train/test split is done in each split is correct.
+ 
+```{r, message=FALSE}
+m4_resamples <- train_tbl %>%
+  time_series_cv(
+    date_var    = date, 
+    assess      = "3 years",
+    skip        = "1 year",
+    cumulative  = TRUE,
+    slice_limit = 6
+  )
+
+m4_resamples %>%
+  tk_time_series_cv_plan() %>% 
+  plot_time_series_cv_plan(.date_var = date, .value = value)
+```
+
+By modifying the data a bit and again using the __automagic_tabs__ functionality, we can see precisely each of the partitions for each of the series:
+
+```{r}
+
+nest_data <- m4_resamples %>%
+  tk_time_series_cv_plan() %>% 
+  mutate(id = .id %>% str_c(id, sep = "-")) %>%
+  select(id, date, value, .key) %>%
+  nest(data = -id)
+
+nest_data <- 
+  nest_data %>%
+  mutate(ts_plots = map(data, 
+                        ~ plot_time_series(.data = .x,
+                                           .date_var = date,
+                                           .value = value,
+                                           .color_var = .key,
+                                           .smooth = FALSE
+                                          )))
+
+xaringanExtra::use_panelset()
+```
+
+`r automagic_tabs(input_data = nest_data, panel_name = "id", .output = "ts_plots",
+                  .layout = "l-page", fig.heigth=1, fig.width=10)`
+                  
+
+## Workflow Generation 💻
+
+In order to tune the hyper parameters of the selected model, we will make use of the __tidymodels__ framework and in particular of the structures called `workflows`. What is a worfklow? Basically it is an R object that allows you to store in a single place the preprocessing tasks, the modeling and the postprocessing tasks (usually through __recipes__ and __parsnip__). If you want to learn more about this package, I recommend that you visit its [repository](https://github.com/tidymodels/workflows).
+
+First, we will generate the preprocessing task with `recipes`. This task consists of the following steps:
+
+- [X] We define the formula to be used by the model.
+
+- [X] With the `step_times_series_signature()` function we generate a multitude of new features from the date field (day of the week, month etc etc).
+
+- [X] With the step `step_rm()` we delete those features that we consider that will not be of interest for the algorithm (Catboost).
+
+- [X] We generate a one hot encoding of the variable day of the month and the id with the function `step_dummy()`.
+
+
+```{r}
+recipe_parsnip <- recipe(value ~ ., training(m4_resamples$splits[[1]])) %>%
+  step_timeseries_signature(date) %>%
+  step_rm(matches("(.iso$)|(.xts$)|(day)|(hour)|(minute)|(second)|(am.pm)")) %>%
+  step_mutate(date_month = factor(date_month, ordered = TRUE)) %>%
+  step_dummy(all_nominal(), one_hot = TRUE)
+```
+
+## Model definition 📊
+
+Next we will define the specification of the Prophet + Catboost model through the __boostime__ package. The main features of the Facebook model, Prophet, are as follows:
+
+- [X] It is fast because it is built with Stan, a statistical inference programming language written in C++.
+
+- [X] By default, an additive model in which nonlinear trends are adjusted for annual, weekly and daily seasonality, plus vacation effects.
+
+- [X] Prophet automatically detects changes in trends by selecting changepoints from the data.
+
+- [X] An annual seasonal component modeled using Fourier series.
+
+- [X] A weekly seasonal component using dummy variables and a user-supplied vacation list.
+
+Below, you can see how we use a multiplicative model. You can try what happens if you change this option to an additive model ;) We have also deactivated the three seasonalities, because we leave the task of modeling the seasonality to the Catboost algorithm (this way, Prophet will be in charge of "detrending" the series).
+
+```{r}
+model_spec_prophet_catboost <- boostime::boost_prophet(growth = "linear",
+                                                       changepoint_num = tune(),
+                                                       changepoint_range = tune(),
+                                                       seasonality_yearly = FALSE,
+                                                       seasonality_daily = FALSE,
+                                                       seasonality_weekly = FALSE,
+                                                       season = "multiplicative",
+                                                       trees = 1000,
+                                                       tree_depth = tune(),
+                                                       learn_rate = tune(),
+                                                       mtry = tune()) %>%
+                              set_engine("prophet_catboost", verbose = 0)
+
+model_spec_prophet_catboost
+```
+Next, we generate the __worfkflow__ with all the necessary components. In this case, we merge the model and the container containing the preprocessing steps into a single object:
+
+```{r}
+wflw <- workflow() %>%
+    add_model(model_spec_prophet_catboost) %>%
+    add_recipe(recipe_parsnip)
+
+wflw
+```
+
+Finally, we will use the `tune_grid()` function to launch the possible configurations on the resamples and see what are the optimal values for the parameters. The tune_grid function will use by default the RMSE and RSQ metrics to estimate the error, but this can be changed using `yardstick::metric_set()`, but we will talk about this in another post. As this process can be a bit cumbersome, we will enable the parallel computing option through the `control_grid()` function with the argument **"allow_par = TRUE".** If you want to learn more about this functionality, you can read this [article](https://www.business-science.io/code-tools/2021/06/17/modeltime-tune-parallel-processing.html) I have written with Matt Dancho on the subject.
+
+
+```{r, include=FALSE}
+set.seed(1234)
+tune_results <- tune_grid(
+    object     = wflw,
+    resamples  = m4_resamples,
+    param_info = parameters(wflw),
+    grid       = 5,
+    control    = control_grid(verbose = TRUE, allow_par = TRUE, parallel_over = "everything")
+)
+```
+
+
+Finally, we select the best one based on the rmse metric as follows and finalize the workflow with the selected parameters. Once this is done, we train the entire workflow on the training data.
+
+```{r}
+tuned_best <- tune_results %>%
+    select_best("rmse")
+
+fin_wflw <- wflw %>%
+    finalize_workflow(parameters = tuned_best)
+
+wflw_fit <- fin_wflw %>%
+    fit(training(m4_resamples$splits[[1]])) 
+```
+
+Once we have our workflow trained, we can run the **Modeltime** workflow as usual!
+
+## Modeltime Workflow 🎉
+
+The first step will be to generate a modeltime_table in which we store our object:
+
+```{r}
+(modeltime_tbl <- wflw_fit %>% modeltime_table())
+
+```
+
+Next, we will calibrate our model with the test data. This will also serve to later be able to calculate the confidence intervals of the predictions:
+
+```{r}
+calibration_tbl <- modeltime_tbl %>% 
+                   modeltime_calibrate(
+                     testing(m4_resamples$splits[[1]])
+                   )
+```
+
+The next step is to make predictions on the test set and visualize them:
+
+```{r}
+nested_data <- calibration_tbl %>%
+               modeltime_forecast(
+                 new_data = testing(m4_resamples$splits[[1]]),
+                 actual_data = training(m4_resamples$splits[[1]]),
+                 keep_data = TRUE
+               ) %>% 
+              nest(data = -id) %>%
+              mutate(ts_plots = map(data,
+                                   ~plot_modeltime_forecast(
+                                     .data = .x
+                                   )))
+
+
+xaringanExtra::use_panelset()
+
+```
+
+`r automagic_tabs(input_data = nested_data, panel_name = "id", .output = "ts_plots",
+                  .layout = "l-page", fig.heigth=1, fig.width=10)`
+
+
+
+We can also visualize the metrics associated with this prediction:
+
+```{r}
+calibration_tbl %>%
+  modeltime_accuracy(
+    new_data = testing(m4_resamples$splits[[1]])
+  ) %>%
+  table_modeltime_accuracy(.interactive = FALSE)
+```
+
+Finally, we retrained the model with all available observations (so as not to lose the last observations that were part of the test and generally have more predictive power) with the `modeltime_refit()` function and predicted the next 3 years on the future table:
+
+```{r}
+refit_tbl <- calibration_tbl %>% 
+             modeltime_refit(
+               data = train_tbl,
+               control = control_refit(allow_par = F)
+             )
+
+nested_data <- refit_tbl %>%
+               modeltime_forecast(
+                 actual_data = train_tbl,
+                 new_data = future_tbl,
+                 keep_data = TRUE
+               ) %>%
+              nest(data = -id) %>%
+              mutate(ts_plots = map(data,
+                                   ~plot_modeltime_forecast(
+                                     .data = .x
+                                   )))
+
+xaringanExtra::use_panelset()
+
+```
+
+`r automagic_tabs(input_data = nested_data, panel_name = "id", .output = "ts_plots",
+                  .layout = "l-page", fig.heigth=1, fig.width=10)`
+                  
+
+## Acknowledgments 👏
+
+I would especially like to thank [Matt Dancho](https://www.linkedin.com/in/mattdancho/) for his contribution to the world of time series, in particular for the creation of the  [Modeltime](https://github.com/business-science/modeltime) package. Without this package, [Boostime](https://github.com/AlbertoAlmuinha/boostime) would never have been possible. THANKS!
+
+## Project Support ⭐️
+
+If you liked this blog post and find the `boostime` project useful, I encourage you to give it a star on [Github](https://github.com/AlbertoAlmuinha/boostime) to show your support! Thank you very much! 🙌
+                  
+## Contact ✉
+
+Alberto Almuiña, [Linkedin](https://www.linkedin.com/in/alberto-almui%C3%B1a-b1176881/), [Twitter](https://twitter.com/AlmuinaAlberto), [Github](https://github.com/AlbertoAlmuinha), [Blog](https://albertoalmuinha.com/es/).

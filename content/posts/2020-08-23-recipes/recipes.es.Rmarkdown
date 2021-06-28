@@ -1,0 +1,204 @@
+---
+title: 'Tidymodels: el paquete `recipes` '
+author: "Alberto Almuiña"
+date: '2020-08-23T21:13:14-05:00'
+description: Aprenda a preprocesar sus datos de una manera simple y consistente.
+slug: recipes_es
+categories: 
+- tidymodels
+tags:
+- preprocesamiento
+- recipes
+---
+
+****
+## ¿Qué es tidymodels?
+****
+
+`tidymodels` es un nuevo ecosistema que consiste en una serie de paquetes que facilitan el proceso de modelado en proyectos de ciencia de datos. Permite de manera unificada realizar remuestreo, preprocesamiento de datos, aporta una interfaz de modelado unificado y validación de resultados. El ciclo completo sería el siguiente:
+
+![](/img/recipes.es_files/cycle.jpg)
+
+
+En esta publicación nos centraremos en el paso del preprocesamiento de datos con el paquete recipes.
+
+****
+## Introducción a `recipes`
+****
+
+Este paquete nace del esfuerzo de reunir todos los pasos de preparación de datos antes de aplicar un modelo de manera simple, eficiente y consistente. `recipes` nace de la analogía entre preparar una receta de cocina y preprocesar sus datos ... ¿cuál es la similitud? Ambos siguen algunos pasos antes de cocinar (modelar).
+
+Cada receta consta de cuatro pasos fundamentales:
+
+* `recipe()`: Se especifica la fórmula (variables predictoras y variables de respuesta).
+
+* `step_xxx()`: Se definen los pasos a seguir: imputación de missing values, variables dummy, centrado, escalado, etc.
+
+* `prep()`: Preparación de la receta. Esto significa que se utiliza un conjunto de datos para analizar cada paso en él.
+
+* `bake()`: Aplique los pasos de preprocesamiento a sus conjuntos de datos.
+
+
+En esta publicación cubriremos estas cuatro partes y veremos ejemplos de buenas prácticas. Espero poder convencerte de que en adelante, tidymodels en general y recipes en particular, son una buena opción.
+
+## Un breve ejemplo: Airquality dataset
+
+```{r, message=FALSE, warning=FALSE}
+library(rsample)
+library(recipes)
+
+data("airquality")
+
+head(airquality) %>% 
+  knitr::kable('html') %>% 
+  kableExtra::kable_styling(position = 'left', 
+                            font_size = 10, 
+                            fixed_thead = list(enabled = T, background = "blue")
+                            ) 
+```
+
+Primero, vamos a separar nuestro conjunto de datos en un conjunto de datos de entrenamiento y uno de test. Utilizaremos el 80% de nuestros datos para entrenar y el 20% restante para testear.
+
+```{r}
+(.df<-airquality %>% initial_split(prop = 0.8))
+
+.df_train<-.df %>% training()
+
+.df_test<-.df %>% testing()
+```
+
+
+Se ver cómo `rsample` nos arroja un objeto dividido, donde se nos dice cuántos registros se utilizan en cada conjunto de datos y el total. A partir de las funciones `training ()` y `testing ()` podemos extraer los datos correspondientes.
+
+**Creando un recipiente**
+
+Ahora es el momento de crear nuestra primera receta.
+
+```{r}
+.recipe<-recipe(Ozone ~ ., data = .df_train)
+
+summary(.recipe)
+```
+
+Se puede ver cómo 'recipes' asigna a cada variable un tipo y un rol. Esto nos permitirá seleccionar posteriormente a qué variables aplicar un paso de preprocesamiento en función de su tipología o rol.
+Una opción muy interesante que permite recipes es actualizar los roles de las variables. Por ejemplo, en este conjunto de datos tenemos dos columnas que tienen valores faltantes: 'Ozone' y 'Solar.R'. Podemos asignar a estas variables un rol específico que luego nos permitirá identificarlas. Crearemos el nuevo rol 'NA_Variable' con la función `udpate_role()`:
+
+```{r}
+.recipe<-.recipe %>% update_role(Ozone, Solar.R, new_role = 'NA_Variable')
+
+summary(.recipe)
+```
+
+
+**Seleccionando los pasos de preprocesamiento**
+
+Una vez que se crea la receta, es el turno de agregar los pasos necesarios para llevar a cabo el preprocesamiento de los datos. Tenemos muchos pasos para elegir:
+
+```{r}
+ls('package:recipes', pattern = '^step_')
+```
+
+Algunos de los más comunes son los siguientes:
+
+* **`step_XXXimpute():`** Métodos para imputar missing values como meanimpute, medianimpute, knnimpute ...
+
+* **`step_range():`** Normaliza los datos numéricos para estar dentro de un rango de valores predefinido.
+
+* **`step_center():`** Normaliza los datos numéricos para tener una media de cero.
+
+* **`step_scale():`** Normaliza los datos numéricos para tener una desviación estándar de uno.
+
+* **`step_dummy():`** Convierte datos nominales (por ejemplo, caracteres o factores) en uno o más términos numéricos de modelo binario para los niveles de los datos originales.
+
+* **`step_other():`** Paso que potencialmente agrupará valores que ocurren con poca frecuencia en una categoría de "otros".
+
+El orden en que se ejecutan los pasos es importante, como se puede leer en la [página oficial del paquete](https://tidymodels.github.io/recipes/articles/Ordering.html):
+
+1. Imputar
+2. Transformaciones individuales para la asimetría y otros problemas.
+3. Discretice (si es necesario y si no tiene otra opción)
+4. Crea variables dummy
+5. Crea interacciones
+6. Pasos de normalización (centrado, escalado, rango, etc.)
+7. Transformación multivariada (por ejemplo, PCA)
+
+
+Además, en cada paso debemos especificar a qué columnas afecta ese paso. Hay varias formas de hacerlo, mencionaremos las más comunes:
+
+1. Pasando el nombre de la variable en el primer argumento
+
+2. Selección por el papel de las variables con las funciones `all_predictors()` y `all_outcomes()`. Como en nuestro caso hemos cambiado los roles 'predeterminados' a 'NA_Variable', podemos usar la función `has_role()` para seleccionarlos.
+
+3. Seleccionando por el tipo de las variables con las funciones `all_nominal()` y `all_numerical()`.
+
+4. Usando los selectores dplyr como `contains()`, `starts_with()` o `ends_with()` funciones.
+
+
+Vamos a aplicar algunos de estos pasos a nuestro ejemplo:
+
+```{r}
+.recipe<-.recipe %>% 
+          step_meanimpute(has_role('NA_Variable'), -Solar.R) %>%
+          step_knnimpute(contains('.R'), neighbors = 3) %>%
+          step_center(all_numeric(), -has_role('NA_Variable')) %>%
+          step_scale(all_numeric(), -has_role('NA_Variable'))
+
+.recipe
+```
+
+Se puede ver cómo combinando todas las técnicas de selección de variables obtenemos una gran versatilidad. También comentar que cuando se usa el signo menos significa que las columnas que cumplen con esta condición están excluidas del paso de preprocesamiento. También se puede ver cómo el objeto de recetas ahora especifica todos los pasos que se llevarán a cabo y en qué variables.
+
+**Preparando la receta**
+
+Ha llegado el momento de preparar la receta en un conjunto de datos. Una vez preparado, podemos aplicar esta receta en múltiples conjuntos de datos:
+
+```{r}
+(.recipe<-.recipe %>% prep(.df_train))
+```
+
+Se observa cómo la receta ahora está 'entrenada'.
+
+**Hornear la receta**
+
+Ahora podemos aplicar esta receta a otro conjunto de datos, por ejemplo a los datos de prueba:
+
+```{r}
+.df_test<-.recipe %>% bake(.df_test)
+
+head(.df_test) %>% 
+  knitr::kable('html') %>% 
+  kableExtra::kable_styling(position = 'left', 
+                            font_size = 10, 
+                            fixed_thead = list(enabled = T, background = "blue")
+                            ) 
+```
+
+
+Finalmente lo ponemos todo junto:
+
+```{r}
+.df<-recipe(Ozone ~ ., data = .df_train) %>%
+   
+       update_role(Ozone, Solar.R, new_role = 'NA_Variable') %>%
+   
+       step_meanimpute(has_role('NA_Variable'), -Solar.R) %>%
+       step_knnimpute(contains('.R'), neighbors = 3) %>%
+       step_center(all_numeric(), -has_role('NA_Variable')) %>%
+       step_scale(all_numeric(), -has_role('NA_Variable')) %>%
+   
+       prep(.df_train) %>%
+       bake(.df_test)
+  
+head(.df) %>% 
+  knitr::kable('html') %>% 
+  kableExtra::kable_styling(position = 'left', 
+                            font_size = 10, 
+                            fixed_thead = list(enabled = T, background = "blue")
+                            ) 
+
+```
+
+
+Como se ha visto, este paquete ofrece una amplia gama de posibilidades y facilidades para llevar a cabo la tarea de preprocesamiento. Muchos otros temas interesantes sobre este paquete se han dejado de lado en esta publicación: crear su propio paso de preprocesamiento o combinar este paquete con rsamples para aplicar múltiples recetas a particiones utilizadas por técnicas de bootstrapping o cv-Folds. Tal vez para una próxima publicación.
+
+

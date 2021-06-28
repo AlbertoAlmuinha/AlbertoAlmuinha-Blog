@@ -1,0 +1,84 @@
+---
+title: '`crayon` R package'
+author: "Alberto Almuiña"
+date: '2020-05-04T21:13:14-05:00'
+description: Add color to terminal output, create styles for notes, warnings or errors.
+slug: crayon
+categories: 
+- R-tips
+tags: 
+- crayon
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<hr />
+<div id="crayon-package" class="section level2">
+<h2><code>crayon</code> package</h2>
+<hr />
+<p>How many times were you creating a function that printed certain notes, warnings or errors on the screen? Did you have the feeling that your messages were not pretty enough? Now, thanks to the crayon package you can improve the format in which you print your messages, adding color and style. Let’s see some example:</p>
+<pre class="r"><code>library(crayon)
+
+cat(red(&#39;This is a red message&#39;))
+
+cat(yellow(&#39;\nThis is a yellow message&#39;))
+
+cat(bold(&#39;\nThis is a bold message&#39;))
+
+cat(underline(&#39;\nThis is an underline message&#39;))
+
+cat(bgGreen(&#39;\nThis is a background message&#39;))</code></pre>
+<p><img src="/img/crayon_files/crayon1.PNG" /></p>
+<p>This package offers the next options:</p>
+<p><strong>Styles</strong></p>
+<ul>
+<li>reset</li>
+<li>bold</li>
+<li>blurred</li>
+<li>italic</li>
+<li>underline</li>
+<li>inverse</li>
+<li>hidden</li>
+</ul>
+<p><strong>Text Colors</strong></p>
+<ul>
+<li>black</li>
+<li>red</li>
+<li>green</li>
+<li>yellow</li>
+<li>blue</li>
+<li>magenta</li>
+<li>cyan</li>
+<li>white</li>
+<li>silver</li>
+</ul>
+<p><strong>Background Colors</strong></p>
+<ul>
+<li>bgBlack</li>
+<li>bgRed</li>
+<li>bgGreen</li>
+<li>bgYellow</li>
+<li>bgBlue</li>
+<li>bgMagenta</li>
+<li>bgCyan</li>
+<li>bgWhite</li>
+</ul>
+<p>You can combine the options using the ‘$’ operator:</p>
+<pre class="r"><code>cat(bgBlack$white$bold(&#39;Black background with white message&#39;))
+
+cat(bgYellow$silver$underline(&#39;\nYellor background with silver message&#39;))</code></pre>
+<p><img src="/img/crayon_files/crayon2.png" /></p>
+<p>Styles can also be nested, and then inner style takes precedence. Try it using the ‘%+%’ operator:</p>
+<pre class="r"><code>cat(red(&#39;This is a red line&#39; %+% blue(&#39; that becames blue &#39;) %+% &#39;and red again&#39;))</code></pre>
+<p><img src="/img/crayon_files/crayon3.png" /></p>
+<p>Finally, you can also define your own styles:</p>
+<pre class="r"><code>error&lt;- red$bold
+warning&lt;-yellow$italic
+note&lt;-cyan
+
+cat(error(&#39;This is an error&#39;))
+cat(warning(&#39;\nThis is a warning&#39;))
+cat(note(&#39;\nThis is a note&#39;))</code></pre>
+<p><img src="/img/crayon_files/crayon4.png" /></p>
+</div>
