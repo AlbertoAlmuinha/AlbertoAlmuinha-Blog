@@ -174,13 +174,13 @@ df<- df %>%
 ```
 
 ```{r, echo=FALSE}
-reactable(
-  df %>% head(),
-  defaultColDef = colDef(
-    style = color_scales(df %>% head(), span = TRUE, colors = c("#1e90ff", "#ffffff", "#ff3030")),
-    minWidth = 70
-  )
-)
+# reactable(
+#   df %>% head(),
+#   defaultColDef = colDef(
+#     style = color_scales(df %>% head(), span = TRUE, colors = c("#1e90ff", "#ffffff", "#ff3030")),
+#     minWidth = 70
+#   )
+# )
 ```
 
 Una vez que tenemos el dataset en el formato que nos interesa, el siguiente paso es continuar con la modelización.
