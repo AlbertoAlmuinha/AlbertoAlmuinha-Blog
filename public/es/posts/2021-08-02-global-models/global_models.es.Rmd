@@ -124,10 +124,8 @@ nest_data <- df %>%
                                                      .alpha = 0.05)
                           ))
 
-xaringanExtra::use_panelset()
+#xaringanExtra::use_panelset()
 ```
-
-`r automagic_tabs2(input_data = nest_data, panel_name = "id", ts_plots, ts_anomaly)`
 
 Vamos a diseñar una función que añada una variable flag por cada columna indicando si el registro es un outlier o no (básicamente transformaremos el gráfico anterior a información numérica que el modelo global pueda entender). La idea es crear dos recipientes de preprocesamiento, uno con las features de outliers y otro sin estas features y ver con qué recipe el modelo global obtiene mejores resultados:
 
