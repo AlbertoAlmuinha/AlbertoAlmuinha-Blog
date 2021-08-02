@@ -1,0 +1,632 @@
+---
+title: "Modelos Globales con Modeltime"
+author: "Alberto Almuiña"
+date: '2021-08-02T02:13:14-05:00'
+description: Una introducción a los modelos globales con modeltime
+slug: modelos-globales
+output: 
+  html_document: 
+    highlight: tango 
+tags:
+  - modeltime
+categories: 
+  - Time Series
+---
+
+
+## Modeltime 📈 y Modelos Globales 🌏
+
+`Modeltime` es un paquete enfocado a series temporales que ha decidido apostar por los modelos globales como estrategia principal para afrontar los nuevos retos de escalabilidad que han venido surgiendo en los últimos años. El número de series temporales ha aumentado de manera exponencial: las organizaciones cada vez disponen de más información a su alcance y a un nivel más desagregado*. Desafortunadamente, las aproximaciones tradicionales, como los modelos ARIMA, en las que se calcula un modelo para cada una de las series temporales disponibles, termina por no ser escalable (Supongamos una organización con 10 mil productos, necesitaría iterar para crear 10 mil modelos y eso sin tener en cuenta hyperparameter tuning). Esta estrategia iterativa puede convertirse en una auténtica pesadilla a medida que las organizaciones crecen al no ser escalable.
+
+**¿Cuál es la alternativa propuesta por Modeltime?**
+
+La alternativa propuesta por Modeltime es utilizar datos en panel y modelos globales. ¿Qué significan estos conceptos? Los datos en panel son básicamente un dataset que contiene varias series temporales apiladas una encima de la otra. En la siguiente imagen puede verse un ejemplo:
+
+![Imagen extraída del artículo [Forecasting Many Time Series (Using NO For-Loops)](https://www.business-science.io/code-tools/2021/07/19/modeltime-panel-data.html) de Matt Dancho](/img/global_models.es_files/panel_data.PNG)
+
+Un modelo global es un modelo único que pronostica todas las series temporales a la vez. Los modelos globales son altamente escalables. Un ejemplo es un modelo XGBoost, que puede determinar las relaciones para todos los 1000 paneles de series temporales con un solo modelo. Veamos un ejemplo:
+
+![Imagen extraída del artículo [Forecasting Many Time Series (Using NO For-Loops)](https://www.business-science.io/code-tools/2021/07/19/modeltime-panel-data.html) de Matt Dancho](/img/global_models.es_files/global_model.PNG)
+
+
+## Caso de Uso: Predicción 🔮 de la Generación Eléctrica 💡 por Sectores de la Generalitat de Catalunya 
+
+⚠️ Advertencia️ ⚠️: El objetivo de este post no es alcanzar los mejores resultados posibles, pues ello requeriría de una dedicación considerable en tareas como Feature Engineering. Lo que se pretende es mostrar una metodología de trabajo a la hora de utilizar el paquete Modeltime para modelos globales. 
+
+Para este post vamos a utilizar el dataset que se encuentra en la página https://datos.gob.es/ subido por la Generalitat de catalunya en el que se mide la generación eléctrica (GWh) en el período 2005-2020 y cuyo análisis se realizará para diferentes sectores de la economía.
+
+En primer lugar, vamos a cargar los paquetes 📦 necesarios y a leer los datos:
+
+```{r, warning=FALSE, message=FALSE}
+#CATBOOST: devtools::install_github('catboost/catboost', subdir = 'catboost/R-package')
+#BOOSTIME: devtools::install_github("AlbertoAlmuinha/boostime")
+
+library(boostime)
+library(timetk)
+library(lubridate)
+library(modeltime)
+library(tidymodels)
+library(tidyverse)
+library(sknifedatar)
+
+url <- "https://analisi.transparenciacatalunya.cat/api/views/j7xc-3kfh/rows.csv?accessType=DOWNLOAD"
+
+df <- read_csv(url)
+```
+
+```{r, echo=FALSE}
+library(reactable)
+library(reactablefmtr)
+library(RColorBrewer)
+
+reactable(
+  df %>% head(),
+  defaultColDef = colDef(
+    style = color_scales(df %>% head(), span = TRUE, colors = c("#1e90ff", "#ffffff", "#ff3030")),
+    minWidth = 70
+  )
+)
+```
+
+
+El siguiente paso es limpiar los datos. Para ello seleccionamos aquellas columnas que nos interesan y transformamos el campo fecha para adaptarlo al formato que nos interesa para modelar.
+
+```{r}
+df <- df %>%
+    select(Data, starts_with("FEEI")) %>%
+    mutate(Data = mdy_hms(Data) %>% date()) %>%
+    rename(date = Data) %>%
+    rename_with(.cols = starts_with("FEEI"),
+                .fn   = ~str_replace(., "FEEI_", ""))
+
+```
+
+```{r, echo=FALSE}
+reactable(
+  df,
+  defaultColDef = colDef(
+    cell = color_tiles(df, colors = brewer.pal(n = 3, name = 'RdYlGn') %>% rev(), number_fmt = scales::number_format(accuracy = 0.1, suffix = " GWh"))
+  )
+)
+```
+
+Si te fijas, nuestro dataset aún no está en el formato adecuado para ser utilizado por un modelo global, necesitamos poner cada serie temporal una encima de otra (panel data). Vamos a ello:
+
+```{r}
+df <- df %>%
+        pivot_longer(-date) %>%
+        rename(id = name) %>%
+        mutate(id = as.factor(id))
+```
+
+```{r, echo=FALSE}
+reactable(
+  df %>% head(10),
+  defaultColDef = colDef(align = "left", maxWidth = 200),
+  columns = list(
+    value = colDef(cell = icon_assign(df %>% head(10), icon = "lightbulb", fill_color = "#ffd633", empty_color = "white", buckets = 3, show_values = "right", number_fmt = scales::number_format(accuracy = 0.1, suffix = " GWh")))
+  )
+)
+```
+
+El siguiente paso será visualizar nuestras series temporales a través de la función `plot_time_series()`. Utilizaremos también la función `plot_anomaly_diagnostics()` para visualizar los outliers detectados por esta función en cada serie. Para la visualización haremos uso de la funcionalidad `automagic_tabs2` para poder visualizar cada serie temporal en una tab diferente de manera cómoda. 
+
+```{r, message=FALSE, warning=FALSE}
+nest_data <- df %>% 
+    nest(data = -id) %>%
+    mutate(ts_plots = map(data, 
+                          ~ plot_time_series(.data = .x,
+                                             .date_var = date,
+                                             .value = value,
+                                             .smooth = FALSE
+                          )),
+           ts_anomaly = map(data, 
+                          ~ plot_anomaly_diagnostics(.data = .x,
+                                                     .date_var = date,
+                                                     .value = value,
+                                                     .alpha = 0.05)
+                          ))
+
+xaringanExtra::use_panelset()
+```
+
+`r automagic_tabs2(input_data = nest_data, panel_name = "id", ts_plots, ts_anomaly)`
+
+Vamos a diseñar una función que añada una variable flag por cada columna indicando si el registro es un outlier o no (básicamente transformaremos el gráfico anterior a información numérica que el modelo global pueda entender). La idea es crear dos recipientes de preprocesamiento, uno con las features de outliers y otro sin estas features y ver con qué recipe el modelo global obtiene mejores resultados:
+
+```{r, warning=FALSE, message=FALSE}
+tk_augment_anomaly_diagnostics <- function(df){
+    
+    nombres <- names(df)[2:length(df)]
+    
+    for(j in 1:length(nombres)){
+        nombre <- nombres[j]
+        nombre1 <- paste(nombre, "_anomaly", sep = "")
+        df <- df %>%
+                bind_cols(df %>%
+                              select(date, {{nombre}}) %>%
+                                purrr::set_names(c("date", "value")) %>%
+                                tk_anomaly_diagnostics(.date_var = date, .value = value) %>%
+                                select(anomaly) %>%
+                                mutate(anomaly = if_else(anomaly == "No", 0, 1)) %>%
+                                rename({{nombre1}} := anomaly)
+                          )
+    }
+    
+    return(df)
+    
+}
+
+df <- df %>% 
+        pivot_wider(names_from = id, values_from = value) %>%
+        tk_augment_anomaly_diagnostics() 
+
+df<- df %>% 
+  select(!contains("anomaly")) %>% 
+  pivot_longer(-date) %>% 
+  bind_cols(
+    df %>% 
+      select(date, contains("anomaly")) %>%
+      pivot_longer(-date, values_to = "anomaly") %>%
+      select(anomaly)
+  ) %>%
+  rename(id = name)
+```
+
+```{r, echo=FALSE}
+reactable(
+  df %>% head(),
+  defaultColDef = colDef(
+    style = color_scales(df %>% head(), span = TRUE, colors = c("#1e90ff", "#ffffff", "#ff3030")),
+    minWidth = 70
+  )
+)
+```
+
+Una vez que tenemos el dataset en el formato que nos interesa, el siguiente paso es continuar con la modelización.
+
+## Generación del Split 📊
+
+Nuestro objetivo será predecir los próximos seis meses de generación eléctrica para cada una de las categorías (id) que tenemos en nuestro dataset. Para ello, vamos a seguir una estrategia de split en la que tendremos nuestro conjunto de entrenamiento y nuestro conjunto de test (será sobre este último sobre el que `modeltime` realice las calibraciones y a partir de los cuales pueda calcular los intervalos de confianza, por ejemplo).
+
+```{r, warning=FALSE, message=FALSE}
+splits = time_series_split(
+    data       = df,
+    assess     = 6,
+    cumulative = TRUE
+)
+
+splits %>%
+    tk_time_series_cv_plan() %>%
+    plot_time_series_cv_plan(date, value)
+```
+
+
+## Modelo Baseline y Workflowsets 📝
+
+En primer lugar, vamos a buscar un modelo baseline de partida que será nuestro modelo a batir. `Modeltime` nos provee de los modelos **window_reg** y **naive_reg** precisamente con este propósito. El primer método permite calcular una función en una ventana determinada (esta función suele ser típicamente la media, la moda o alguna media pesada, aunque el sistema es lo suficientemente flexible que permite introducir la función que el usuario desee). El segundo método utiliza la última observación como si fuese el siguiente valor en la serie, aunque también está disponible la versión estacional de este mismo método. Modeltime también integra el paquete `workflowsets` desarrollado por el equipo de Tidymodels a través de la función `modeltime_fit_workflowset()`. La idea principal aquí es combinar muchos recipientes de preprocesamiento con diferentes modelos para evaluarlos en un único objeto de una manera integrada. Esto será lo que haremos para tratar de buscar nuestro mejor modelo baseline posible. En primer lugar, vamos a definir cuatro recipientes de preprocesamiento:
+
+```{r}
+recipe_basic <- recipe(value ~ date + id, data = training(splits))
+
+recipe_basic_features <- recipe(value ~ id + date, data = training(splits)) %>%
+    step_timeseries_signature(date) %>%
+    step_rm(matches("(xts$)|(iso$)|(^.pm)")) %>%
+    step_zv(all_predictors()) %>%
+    step_dummy(all_nominal_predictors())
+
+recipe_outliers <- recipe(value ~ ., data = training(splits))
+
+recipe_outliers_features <- recipe(value ~ ., data = training(splits)) %>%
+    step_timeseries_signature(date) %>%
+    step_rm(matches("(xts$)|(iso$)|(^.pm)")) %>%
+    step_zv(all_predictors()) %>%
+    step_dummy(all_nominal_predictors())
+
+```
+
+A continuación, generamos diferentes especificaciones de modelos variando los argumentos que deseemos. En el caso de los modelos baseline, variaremos la longitud de la ventana para el algoritmo `window_reg` y el periodo estacional para el algoritmo `naive_reg`. Esto nos permitirá generar múltiples especificaciones que se combinarán posteriormente con los recipes de preprocesamiento generando todas las posibles combinaciones de preprocesamiento + modelo. Para generar las especificaciones variando el argumento, utilizaremos la función implementanda en **modeltime** `create_model_grid()`:
+
+```{r}
+window_grid_median_tbl <- tibble(
+    window_size = 1:12
+) %>%
+    create_model_grid(
+        f_model_spec  = window_reg,
+        id            = "id",
+        engine_name   = "window_function",
+        engine_params = list(
+            window_function = ~ median(.)
+        )
+    )
+
+snaive_grid_tbl <- tibble(
+    seasonal_period = seq(3, 36, 3)
+) %>%
+    create_model_grid(
+        f_model_spec  = naive_reg,
+        id            = "id",
+        engine_name   = "snaive"
+    )
+
+(models <- union(snaive_grid_tbl %>% select(.models), window_grid_median_tbl %>% select(.models)))
+```
+
+Una vez tenemos nuestros modelos, el siguiente paso es cruzarlos con los cuatro recipes de preprocesamiento para crear el objeto de workflowsets. A continuación se calculan los modelos a través de la función `modeltime_fit_workflowsets()` (nueva funcionalidad que permite integrar el paquete Modeltime y Workflowsets). Lo haremos en paralelo para que el resultado tarde menos en ejecutar utilizando seis núcleos:
+
+```{r, warning=FALSE, message=FALSE}
+wfset <- workflow_set(
+    preproc = list(
+        recipe_basic,
+        recipe_basic_features,
+        recipe_outliers,
+        recipe_outliers_features
+    ),
+    models = models$.models,
+    cross  = TRUE
+)
+
+parallel_start(6)
+
+modeltime_baseline_fit <- wfset %>%
+    modeltime_fit_workflowset(
+        data    = training(splits),
+        control = control_fit_workflowset(
+            verbose   = TRUE,
+            allow_par = TRUE
+        )
+    )
+
+parallel_stop()
+
+modeltime_baseline_fit %>%
+  modeltime_calibrate(testing(splits), id = "id") %>%
+  modeltime_accuracy(acc_by_id = TRUE)  %>%   
+  group_by(.model_desc) %>%
+  table_modeltime_accuracy(.expand_groups = FALSE)
+```
+
+
+A continuación, vamos a seleccionar el mejor modelo para cada uno de los sectores de la economía en base a la métrica rmse. Fíjate que estamos obteniendo las métricas localmente gracias al argumento `acc_by_id = TRUE` de la función `modeltime_accuracy()`. Esto nos permitirá obtener las métricas para cada serie temporal dentro de cada modelo entrenado. Fíjate que para que esta opción funcione correctamente es necesario pasar anteriormente en la función `modeltime_calibrate()` el argumento `id = "id"`. Esta funcionalidad ha sido introducida por Matt Dancho en la última versión de **Modeltime** (0.7.0):
+
+```{r, warning=FALSE}
+baseline_models <- modeltime_baseline_fit %>%
+  modeltime_calibrate(testing(splits), id = "id") %>%
+  modeltime_accuracy(acc_by_id = TRUE) %>%
+  group_by(id) %>% 
+  slice_min(rmse) %>%
+  slice_min(.model_id) %>%
+  ungroup()
+
+baseline_models %>%
+  table_modeltime_accuracy()
+```
+
+Fíjate que también podemos calcular las métricas de forma global (una por cada modelo) que es lo que estaba disponible hasta esta última versión en Modeltime. Veamos como podríamos hacerlo:
+
+```{r, warning=FALSE}
+modeltime_baseline_fit %>%
+  modeltime_calibrate(testing(splits)) %>%
+  modeltime_accuracy() %>%
+  table_modeltime_accuracy()
+```
+
+
+Vamos a cruzar contra la tabla que habíamos generado con los modelos calculados para quedarnos simplemente con los que nos interesan y generar así un objeto `modeltime_table` reducido. Fíjate que en el objeto **data_forecasted** vamos a tener las predicciones de los 13 modelos para todas y cada una de las series temporales, por lo que tendremos que filtrar para cada modelo la predicción que nos interese en base a la tabla anterior (de lo contrario, para cada serie temporal se pintarían las predicciones de todos los modelos disponibles):
+
+```{r}
+modeltime_baseline_tbl <- modeltime_baseline_fit %>% 
+                            inner_join(baseline_models, by = ".model_id") %>% 
+                            select(.model_id, .model, .model_desc.x) %>% 
+                            rename(.model_desc = .model_desc.x)
+
+data_forecasted <- modeltime_baseline_tbl %>%
+                    modeltime_calibrate(testing(splits), id = "id") %>%
+                    modeltime_forecast(
+                      new_data = testing(splits),
+                      actual_data = training(splits),
+                      conf_by_id = TRUE,
+                      keep_data = TRUE
+                    )
+
+
+final_baseline_models <- data_forecasted %>%
+  filter(.key == "actual") %>%
+  union(
+    data_forecasted %>%
+      filter(.key == "prediction") %>%
+      inner_join(baseline_models, by = c("id", ".model_id")) %>%
+      select(.model_id, .model_desc.x, .key, .index, .value, .conf_lo, .conf_hi, date, id, value, anomaly) %>%
+      rename(.model_desc = .model_desc.x)
+  )
+
+```
+
+A continuación vamos a pintar las predicciones de cada modelo con sus intervalos de confianza. Para ello, crearemos una función específica que se encarge de esta tarea (podríamos usar la función `plot_modeltime_forecast()`, pero al tener tantas series, no es del todo adecuada para la visualización en este reporte y además queremos utilizar las automagic_tabs para generar una tab por cada serie):
+
+```{r}
+plot_one_modeltime_forecast <- function(final_baseline_models, id){
+    
+    g <- final_baseline_models %>%
+        filter(id == {{id}}) %>%
+        plot_time_series(
+            .date_var = .index,
+            .value = .value,
+            .color_var = .model_desc,
+            .smooth = FALSE,
+            .interactive = FALSE
+        ) + ggplot2::geom_ribbon(
+            ggplot2::aes(
+                ymin = .conf_lo,
+                ymax = .conf_hi,
+                color = .model_desc
+            ),
+            fill     = "grey20",
+            alpha    = 0.20,
+            linetype = 0
+        )
+    
+    p <- plotly::ggplotly(g, dynamicTicks = TRUE)
+    
+    return(p)
+    
+}
+
+id <- final_baseline_models$id %>% unique()
+
+ts_plots <- list()
+
+for(j in 1:length(id)){
+  ts_plots[[j]]<-plot_one_modeltime_forecast(final_baseline_models, id = id[j])
+}
+
+nested_data <- tibble(id = as.factor(id),
+                      ts_plots = ts_plots)
+
+xaringanExtra::use_panelset()
+
+```
+
+`r automagic_tabs(input_data = nested_data, panel_name = "id", .output = "ts_plots",
+                  .layout = "l-page", fig.heigth=1, fig.width=10, echo=FALSE)`
+                  
+                  
+## Modelos Globales: XGBoost y Prophet + Catboost ⚙️📊
+
+Una vez que tenemos los modelos baseline, es hora de pasar a la acción y tratar de batirlos. En este post trataremos de hacerlo utilizando los algoritmos XGBoost y el modelo Prophet + Catboost del paquete `boostime`. Vamos a comenzar por buscar los mejores parámetros para el algoritmo `XGBoost`. En este caso, no utilizaremos la funcionalidad de worfklowsets de combinar múltiples pasos de preprocesamiento, si no que crearemos un `workflow` que consistirá en un recipiente y un modelo y buscaremos directamente sus mejores hiperparámetros(esto nos ahorrará bastante tiempo de cómputo en este ejemplo y veremos otra forma de proceder). También cabe resaltar el hecho de que las resamples que se calculan para el modelo XGBoost y el modelo Prophet+Catboost se hacen de manera diferente. La explicación es que el último es un modelo secuencial mientras que el primero no tiene esta característica.
+
+```{r}
+model_spec_xgboost <- boost_tree(
+    mode           = "regression",
+    mtry           = tune(),
+    trees          = 1000,
+    min_n          = tune(),
+    tree_depth     = tune(),
+    learn_rate     = tune(),
+    loss_reduction = tune(),
+    sample_size    = tune()
+) %>%
+    set_engine("xgboost")
+
+
+recipe_xgboost <- recipe(value ~ id + date + anomaly, data = training(splits)) %>%
+    step_timeseries_signature(date) %>%
+    step_rm(matches("(xts$)|(iso$)|(^.pm)")) %>%
+    step_zv(all_predictors()) %>%
+    step_mutate(date_month = factor(date_month, ordered = TRUE)) %>%
+    step_rm(date) %>%
+    step_dummy(all_nominal_predictors(), one_hot = TRUE)
+
+wflw <- workflow() %>%
+    add_model(model_spec_xgboost) %>%
+    add_recipe(recipe_xgboost)
+
+
+resamples_kfold <- training(splits) %>% vfold_cv(v = 5, repeats = 1)
+
+set.seed(3333)
+tune_results_xgboost <- tune_grid(
+    object     = wflw,
+    resamples  = resamples_kfold,
+    param_info = parameters(wflw),
+    grid       = 5,
+    control    = control_grid(verbose = FALSE, allow_par = TRUE, parallel_over = "everything")
+)
+
+xgb_tuned_best <- tune_results_xgboost %>%
+    select_best("rmse")
+
+fin_wflw <- wflw %>%
+    finalize_workflow(parameters = xgb_tuned_best)
+
+wflw_fit_xgboost <- fin_wflw %>%
+    fit(training(splits))
+
+```
+
+A continuación realizamos lo mismo para Prophet + Catboost. En primer lugar generamos los resamples que necesitaremos para buscar los mejores hiperparámetros. Aunque los datos se vean algo caóticos, esto es porque están todas las series contenidas, lo importante es ver donde empiezan y terminan los subsets de training y testing en cada una de las particiones. Si quieres ver los datos de cada una de las series en cada una de las particiones, puedes consultar este [post](https://albertoalmuinha.com/es/posts/2021-06-28-boostime-tuning/parameter-tuning-boostime-es/) donde sí lo realizamos.
+
+```{r}
+resamples <- training(splits) %>%
+  time_series_cv(
+    date_var    = date, 
+    assess      = "6 months",
+    cumulative  = TRUE,
+    skip        = "3 months", 
+    slice_limit = 6
+  )
+
+resamples %>%
+  tk_time_series_cv_plan() %>% 
+  plot_time_series_cv_plan(.date_var = date, .value = value)
+```
+
+Ahora generamos el recipe y la especificación del modelo Prophet + Catboost a través del paquete `boostime`. Utilizaremos un modelo multiplicativo porque alguna de las series que nos hemos encontrado tiene este comportamiento por lo que es posible que este modelo se comporte mejor. Finalmente, vamos a utilizar la función `tune_grid()` para lanzar las posibles configuraciones sobre los resamples y ver cuáles son los valores óptimos para los parámetros. La función tune_grid utilizará por defecto las métricas RMSE y RSQ para estimar el error, pero esto puede cambiarse utilizando `yardstick::metric_set()`, pero de este tema hablaremos en otro post. Como este proceso puede ser algo pesado, activaremos la opción de computación en paralelo a través de la función `control_grid()` con el argumento “allow_par = TRUE”. Si quieres aprender más sobre esta funcionalidad, puedes leer este [artículo](https://www.business-science.io/code-tools/2021/06/17/modeltime-tune-parallel-processing.html) que he escrito con Matt Dancho sobre el tema.
+
+```{r, include=FALSE}
+
+recipe_prophet_catboost <- recipe(value ~ id + date + anomaly, data = training(splits)) %>%
+    step_timeseries_signature(date) %>%
+    step_rm(matches("(xts$)|(iso$)|(^.pm)")) %>%
+    step_zv(all_predictors()) %>%
+    step_mutate(date_month = factor(date_month, ordered = TRUE)) %>%
+    step_dummy(all_nominal_predictors(), one_hot = TRUE)
+
+model_spec_prophet_catboost <- boostime::boost_prophet(growth = "linear",
+                                                       changepoint_num = tune(),
+                                                       changepoint_range = tune(),
+                                                       seasonality_yearly = FALSE,
+                                                       seasonality_daily = FALSE,
+                                                       seasonality_weekly = FALSE,
+                                                       season = "multiplicative",
+                                                       trees = 1000,
+                                                       tree_depth = tune(),
+                                                       learn_rate = tune(),
+                                                       mtry = tune()) %>%
+                              set_engine("prophet_catboost", verbose = 0)
+
+wflw <- workflow() %>%
+    add_model(model_spec_prophet_catboost) %>%
+    add_recipe(recipe_prophet_catboost)
+
+set.seed(1234)
+tune_results <- tune_grid(
+    object     = wflw,
+    resamples  = resamples,
+    param_info = parameters(wflw),
+    grid       = 5,
+    control    = control_grid(verbose = FALSE, allow_par = TRUE, parallel_over = "everything")
+)
+
+tuned_best <- tune_results %>%
+    select_best("rmse")
+
+fin_wflw <- wflw %>%
+    finalize_workflow(parameters = tuned_best)
+
+wflw_fit_prophet_catboost <- fin_wflw %>%
+    fit(training(resamples$splits[[1]])) 
+```
+
+```{r, eval=FALSE}
+
+recipe_prophet_catboost <- recipe(value ~ id + date + anomaly, data = training(splits)) %>%
+    step_timeseries_signature(date) %>%
+    step_rm(matches("(xts$)|(iso$)|(^.pm)")) %>%
+    step_zv(all_predictors()) %>%
+    step_mutate(date_month = factor(date_month, ordered = TRUE)) %>%
+    step_dummy(all_nominal_predictors(), one_hot = TRUE)
+
+model_spec_prophet_catboost <- boostime::boost_prophet(growth = "linear",
+                                                       changepoint_num = tune(),
+                                                       changepoint_range = tune(),
+                                                       seasonality_yearly = FALSE,
+                                                       seasonality_daily = FALSE,
+                                                       seasonality_weekly = FALSE,
+                                                       season = "multiplicative",
+                                                       trees = 1000,
+                                                       tree_depth = tune(),
+                                                       learn_rate = tune(),
+                                                       mtry = tune()) %>%
+                              set_engine("prophet_catboost", verbose = 0)
+
+wflw <- workflow() %>%
+    add_model(model_spec_prophet_catboost) %>%
+    add_recipe(recipe_prophet_catboost)
+
+set.seed(1234)
+tune_results <- tune_grid(
+    object     = wflw,
+    resamples  = resamples,
+    param_info = parameters(wflw),
+    grid       = 5,
+    control    = control_grid(verbose = FALSE, allow_par = TRUE, parallel_over = "everything")
+)
+
+tuned_best <- tune_results %>%
+    select_best("rmse")
+
+fin_wflw <- wflw %>%
+    finalize_workflow(parameters = tuned_best)
+
+wflw_fit_prophet_catboost <- fin_wflw %>%
+    fit(training(resamples$splits[[1]])) 
+```
+
+
+```{r}
+data_forecasted <- modeltime_table(
+  wflw_fit_prophet_catboost,
+  wflw_fit_xgboost
+) %>%
+    modeltime_calibrate(testing(splits), id = "id") %>%
+    modeltime_forecast(
+        new_data = testing(splits),
+        actual_data = training(splits),
+        conf_by_id = TRUE,
+        keep_data = TRUE
+    ) 
+
+id <- final_baseline_models$id %>% unique()
+
+ts_plots <- list()
+
+for(j in 1:length(id)){
+  ts_plots[[j]]<-plot_one_modeltime_forecast(data_forecasted, id = id[j])
+}
+
+nested_data <- tibble(id = as.factor(id),
+                      ts_plots = ts_plots)
+
+xaringanExtra::use_panelset()
+```
+
+
+`r automagic_tabs(input_data = nested_data, panel_name = "id", .output = "ts_plots",
+                  .layout = "l-page", fig.heigth=1, fig.width=10, echo=FALSE)`
+                  
+                  
+A  continuación mostramos las métricas de cada modelo global desglosadas por serie temporal. Como mencionamos anteriormente, esta es una nueva adición de la ultima versión de `Modeltime` y para lograrlo es necesario incluir el argumento **id** en la función `modeltime_calibrate()` y posteriormente pasar el argumento `acc_by_id = TRUE` en la función `modeltime_accuracy()`:
+
+```{r}
+modeltime_table(
+  wflw_fit_prophet_catboost,
+  wflw_fit_xgboost
+) %>%
+    modeltime_calibrate(testing(splits), id = "id") %>%
+    modeltime_accuracy(acc_by_id = TRUE) %>%
+    group_by(.model_desc) %>%
+    table_modeltime_accuracy(.expand_groups = FALSE)
+```
+
+Finalmente, vamos a ver cuáles son los mejores modelos para cada una de las series temporales para así poder ver si estos son mejores que los modelos baseline que habíamos seleccionado en un principio:
+
+```{r}
+accuracy_tbl <- modeltime_table(
+  wflw_fit_prophet_catboost,
+  wflw_fit_xgboost
+) %>%
+    modeltime_calibrate(testing(splits), id = "id") %>%
+    modeltime_accuracy(acc_by_id = TRUE)
+
+best_models <- accuracy_tbl %>% group_by(id) %>% slice_min(rmse) %>% ungroup()
+best_models %>% table_modeltime_accuracy()
+```
+
+Se puede ver claramente que los modelos baseline consiguen mejores métricas que estos segundos modelos que hemos entrenado. Aunque pueda parecer sorprendente, realmente los modelos simples pueden dar resultados aceptables cuando se tunean los parámetros (incluso superiores a modelos a priori más complejos). Además, como dijimos al inicio del post, una búsqueda de mejores variables (feature engineering) podría mejorar los resultados de los modelos XGBoost y Prophet + Catboost.
+
+## Fuentes 📚
+
+- [X] [R TUTORIAL: Forecasting Airline Travel COVID19 | NEW Modeltime Features](https://www.youtube.com/watch?v=QhuoCKhQ5fg&t=11s)
+
+- [X] [Forecasting Many Time Series (Using NO For-Loops)](https://www.business-science.io/code-tools/2021/07/19/modeltime-panel-data.html)
+
+## Aprende 💻
+
+Si quieres aprender sobre series temporales y Modeltime, este es el curso que recomiendo:
+
+- [X] [DS4B 203-R: High-Performance Time Series Forecasting](https://university.business-science.io/p/ds4b-203-r-high-performance-time-series-forecasting)
+                  
+## Contacto ✉
+
+Alberto Almuiña, [Linkedin](https://www.linkedin.com/in/alberto-almui%C3%B1a-b1176881/), [Twitter](https://twitter.com/AlmuinaAlberto), [Github](https://github.com/AlbertoAlmuinha), [Blog](https://albertoalmuinha.com/es/).
