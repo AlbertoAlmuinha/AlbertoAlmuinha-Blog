@@ -28,7 +28,7 @@ Un modelo global es un modelo único que pronostica todas las series temporales 
 
 ## Caso de Uso: Predicción 🔮 de la Generación Eléctrica 💡 por Sectores de la Generalitat de Catalunya 
 
-⚠️ Advertencia️ ⚠️: El objetivo de este post no es alcanzar los mejores resultados posibles, pues ello requeriría de una dedicación considerable en tareas como Feature Engineering. Lo que se pretende es mostrar una metodología de trabajo a la hora de utilizar el paquete Modeltime para modelos globales. 
+⚠️ **Advertencia️** ⚠️: El objetivo de este post no es alcanzar los mejores resultados posibles, pues ello requeriría de una dedicación considerable en tareas como Feature Engineering. Lo que se pretende es mostrar una metodología de trabajo a la hora de utilizar el paquete Modeltime para modelos globales. 
 
 Para este post vamos a utilizar el dataset que se encuentra en la página https://datos.gob.es/ subido por la Generalitat de catalunya en el que se mide la generación eléctrica (GWh) en el período 2005-2020 y cuyo análisis se realizará para diferentes sectores de la economía.
 
@@ -56,13 +56,13 @@ library(reactable)
 library(reactablefmtr)
 library(RColorBrewer)
 
-reactable(
-  df %>% head(),
-  defaultColDef = colDef(
-    style = color_scales(df %>% head(), span = TRUE, colors = c("#1e90ff", "#ffffff", "#ff3030")),
-    minWidth = 70
-  )
-)
+# reactable(
+#   df %>% head(),
+#   defaultColDef = colDef(
+#     style = color_scales(df %>% head(), span = TRUE, colors = c("#1e90ff", "#ffffff", "#ff3030")),
+#     minWidth = 70
+#   )
+# )
 ```
 
 
@@ -76,15 +76,16 @@ df <- df %>%
     rename_with(.cols = starts_with("FEEI"),
                 .fn   = ~str_replace(., "FEEI_", ""))
 
+head(df)
 ```
 
 ```{r, echo=FALSE}
-reactable(
-  df,
-  defaultColDef = colDef(
-    cell = color_tiles(df, colors = brewer.pal(n = 3, name = 'RdYlGn') %>% rev(), number_fmt = scales::number_format(accuracy = 0.1, suffix = " GWh"))
-  )
-)
+# reactable(
+#   df,
+#   defaultColDef = colDef(
+#     cell = color_tiles(df, colors = brewer.pal(n = 3, name = 'RdYlGn') %>% rev(), number_fmt = scales::number_format(accuracy = 0.1, suffix = " GWh"))
+#   )
+# )
 ```
 
 Si te fijas, nuestro dataset aún no está en el formato adecuado para ser utilizado por un modelo global, necesitamos poner cada serie temporal una encima de otra (panel data). Vamos a ello:
@@ -94,16 +95,18 @@ df <- df %>%
         pivot_longer(-date) %>%
         rename(id = name) %>%
         mutate(id = as.factor(id))
+
+head(df)
 ```
 
 ```{r, echo=FALSE}
-reactable(
-  df %>% head(10),
-  defaultColDef = colDef(align = "left", maxWidth = 200),
-  columns = list(
-    value = colDef(cell = icon_assign(df %>% head(10), icon = "lightbulb", fill_color = "#ffd633", empty_color = "white", buckets = 3, show_values = "right", number_fmt = scales::number_format(accuracy = 0.1, suffix = " GWh")))
-  )
-)
+# reactable(
+#   df %>% head(10),
+#   defaultColDef = colDef(align = "left", maxWidth = 180),
+#   columns = list(
+#     value = colDef(cell = icon_assign(df %>% head(10), icon = "lightbulb", fill_color = "#ffd633", empty_color = "white", buckets = 3, show_values = "right", number_fmt = scales::number_format(accuracy = 0.1, suffix = " GWh")))
+#   )
+# )
 ```
 
 El siguiente paso será visualizar nuestras series temporales a través de la función `plot_time_series()`. Utilizaremos también la función `plot_anomaly_diagnostics()` para visualizar los outliers detectados por esta función en cada serie. Para la visualización haremos uso de la funcionalidad `automagic_tabs2` para poder visualizar cada serie temporal en una tab diferente de manera cómoda. 
@@ -124,8 +127,10 @@ nest_data <- df %>%
                                                      .alpha = 0.05)
                           ))
 
-#xaringanExtra::use_panelset()
+xaringanExtra::use_panelset()
 ```
+
+`r automagic_tabs2(input_data = nest_data, panel_name = "id", ts_plots, ts_anomaly)`
 
 Vamos a diseñar una función que añada una variable flag por cada columna indicando si el registro es un outlier o no (básicamente transformaremos el gráfico anterior a información numérica que el modelo global pueda entender). La idea es crear dos recipientes de preprocesamiento, uno con las features de outliers y otro sin estas features y ver con qué recipe el modelo global obtiene mejores resultados:
 
