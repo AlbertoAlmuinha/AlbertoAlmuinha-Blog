@@ -3,7 +3,7 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://AlbertoAlmui%C3%B1a.com/es/</loc>
-    <lastmod>2021-06-28T22:37:54+02:00</lastmod>
+    <lastmod>2021-08-02T22:28:31+02:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="en"
@@ -13,6 +13,84 @@
                 rel="alternate"
                 hreflang="es"
                 href="https://AlbertoAlmui%C3%B1a.com/es/"
+                />
+  </url><url>
+    <loc>https://AlbertoAlmui%C3%B1a.com/es/categories/</loc>
+    <lastmod>2021-08-02T22:28:31+02:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://AlbertoAlmui%C3%B1a.com/categories/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="es"
+                href="https://AlbertoAlmui%C3%B1a.com/es/categories/"
+                />
+  </url><url>
+    <loc>https://AlbertoAlmui%C3%B1a.com/es/posts/2021-08-02-global-models/modelos-globales/</loc>
+    <lastmod>2021-08-02T22:28:31+02:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://AlbertoAlmui%C3%B1a.com/posts/2021-08-02-global-models/global-models/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="es"
+                href="https://AlbertoAlmui%C3%B1a.com/es/posts/2021-08-02-global-models/modelos-globales/"
+                />
+  </url><url>
+    <loc>https://AlbertoAlmui%C3%B1a.com/es/tags/modeltime/</loc>
+    <lastmod>2021-08-02T22:28:31+02:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://AlbertoAlmui%C3%B1a.com/tags/modeltime/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="es"
+                href="https://AlbertoAlmui%C3%B1a.com/es/tags/modeltime/"
+                />
+  </url><url>
+    <loc>https://AlbertoAlmui%C3%B1a.com/es/posts/</loc>
+    <lastmod>2021-08-02T22:28:31+02:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://AlbertoAlmui%C3%B1a.com/posts/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="es"
+                href="https://AlbertoAlmui%C3%B1a.com/es/posts/"
+                />
+  </url><url>
+    <loc>https://AlbertoAlmui%C3%B1a.com/es/tags/</loc>
+    <lastmod>2021-08-02T22:28:31+02:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://AlbertoAlmui%C3%B1a.com/tags/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="es"
+                href="https://AlbertoAlmui%C3%B1a.com/es/tags/"
+                />
+  </url><url>
+    <loc>https://AlbertoAlmui%C3%B1a.com/es/categories/time-series/</loc>
+    <lastmod>2021-08-02T22:28:31+02:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://AlbertoAlmui%C3%B1a.com/categories/time-series/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="es"
+                href="https://AlbertoAlmui%C3%B1a.com/es/categories/time-series/"
                 />
   </url><url>
     <loc>https://AlbertoAlmui%C3%B1a.com/es/tags/boostime/</loc>
@@ -28,19 +106,6 @@
                 href="https://AlbertoAlmui%C3%B1a.com/es/tags/boostime/"
                 />
   </url><url>
-    <loc>https://AlbertoAlmui%C3%B1a.com/es/categories/</loc>
-    <lastmod>2021-06-28T22:37:54+02:00</lastmod>
-    <xhtml:link
-                rel="alternate"
-                hreflang="en"
-                href="https://AlbertoAlmui%C3%B1a.com/categories/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="es"
-                href="https://AlbertoAlmui%C3%B1a.com/es/categories/"
-                />
-  </url><url>
     <loc>https://AlbertoAlmui%C3%B1a.com/es/posts/2021-06-28-boostime-tuning/parameter-tuning-boostime-es/</loc>
     <lastmod>2021-06-28T22:37:54+02:00</lastmod>
     <xhtml:link
@@ -52,45 +117,6 @@
                 rel="alternate"
                 hreflang="es"
                 href="https://AlbertoAlmui%C3%B1a.com/es/posts/2021-06-28-boostime-tuning/parameter-tuning-boostime-es/"
-                />
-  </url><url>
-    <loc>https://AlbertoAlmui%C3%B1a.com/es/posts/</loc>
-    <lastmod>2021-06-28T22:37:54+02:00</lastmod>
-    <xhtml:link
-                rel="alternate"
-                hreflang="en"
-                href="https://AlbertoAlmui%C3%B1a.com/posts/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="es"
-                href="https://AlbertoAlmui%C3%B1a.com/es/posts/"
-                />
-  </url><url>
-    <loc>https://AlbertoAlmui%C3%B1a.com/es/tags/</loc>
-    <lastmod>2021-06-28T22:37:54+02:00</lastmod>
-    <xhtml:link
-                rel="alternate"
-                hreflang="en"
-                href="https://AlbertoAlmui%C3%B1a.com/tags/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="es"
-                href="https://AlbertoAlmui%C3%B1a.com/es/tags/"
-                />
-  </url><url>
-    <loc>https://AlbertoAlmui%C3%B1a.com/es/categories/time-series/</loc>
-    <lastmod>2021-06-28T22:37:54+02:00</lastmod>
-    <xhtml:link
-                rel="alternate"
-                hreflang="en"
-                href="https://AlbertoAlmui%C3%B1a.com/categories/time-series/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="es"
-                href="https://AlbertoAlmui%C3%B1a.com/es/categories/time-series/"
                 />
   </url><url>
     <loc>https://AlbertoAlmui%C3%B1a.com/es/tags/bayesian-structural-time-series/</loc>
