@@ -45,6 +45,7 @@ library(modeltime)
 library(tidymodels)
 library(tidyverse)
 library(sknifedatar)
+library(gt)
 
 url <- "https://analisi.transparenciacatalunya.cat/api/views/j7xc-3kfh/rows.csv?accessType=DOWNLOAD"
 
@@ -76,7 +77,10 @@ df <- df %>%
     rename_with(.cols = starts_with("FEEI"),
                 .fn   = ~str_replace(., "FEEI_", ""))
 
-head(df)
+head(df) %>% 
+  gt() %>% 
+  tab_header(title = md('**Datos por Sector (Catalunya)**')) %>% 
+  opt_align_table_header('left')
 ```
 
 ```{r, echo=FALSE}
@@ -96,7 +100,10 @@ df <- df %>%
         rename(id = name) %>%
         mutate(id = as.factor(id))
 
-head(df)
+head(df) %>% 
+  gt() %>% 
+  tab_header(title = md('**Datos en Formato Panel**')) %>% 
+  opt_align_table_header('left')
 ```
 
 ```{r, echo=FALSE}
@@ -252,15 +259,13 @@ snaive_grid_tbl <- tibble(
 (models <- union(snaive_grid_tbl %>% select(.models), window_grid_median_tbl %>% select(.models)))
 ```
 
-Una vez tenemos nuestros modelos, el siguiente paso es cruzarlos con los cuatro recipes de preprocesamiento para crear el objeto de workflowsets. A continuación se calculan los modelos a través de la función `modeltime_fit_workflowsets()` (nueva funcionalidad que permite integrar el paquete Modeltime y Workflowsets). Lo haremos en paralelo para que el resultado tarde menos en ejecutar utilizando seis núcleos:
+Una vez tenemos nuestros modelos, el siguiente paso es cruzarlos con los dos recipes de preprocesamiento para crear el objeto de workflowsets (no utilizamos los otros dos porque tendríamos que modificar el código porque fallaría al haber convertido los id en variables dummy). A continuación se calculan los modelos a través de la función `modeltime_fit_workflowsets()` (nueva funcionalidad que permite integrar el paquete Modeltime y Workflowsets). Lo haremos en paralelo para que el resultado tarde menos en ejecutar utilizando seis núcleos:
 
 ```{r, warning=FALSE, message=FALSE}
 wfset <- workflow_set(
     preproc = list(
         recipe_basic,
-        recipe_basic_features,
-        recipe_outliers,
-        recipe_outliers_features
+        recipe_outliers
     ),
     models = models$.models,
     cross  = TRUE

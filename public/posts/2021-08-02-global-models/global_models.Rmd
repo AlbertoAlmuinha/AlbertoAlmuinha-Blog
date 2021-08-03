@@ -43,6 +43,7 @@ library(modeltime)
 library(tidymodels)
 library(tidyverse)
 library(sknifedatar)
+library(gt)
 
 url <- "https://analisi.transparenciacatalunya.cat/api/views/j7xc-3kfh/rows.csv?accessType=DOWNLOAD"
 
@@ -73,7 +74,10 @@ df <- df %>%
     rename_with(.cols = starts_with("FEEI"),
                 .fn   = ~str_replace(., "FEEI_", ""))
 
-head(df)
+head(df) %>% 
+  gt() %>% 
+  tab_header(title = md('**Data by Sector (Catalunya)**')) %>% 
+  opt_align_table_header('left')
 ```
 
 ```{r, echo=FALSE}
@@ -93,7 +97,10 @@ df <- df %>%
         rename(id = name) %>%
         mutate(id = as.factor(id))
 
-head(df)
+head(df) %>% 
+  gt() %>% 
+  tab_header(title = md('**Panel Data**')) %>% 
+  opt_align_table_header('left')
 ```
 
 ```{r, echo=FALSE}
@@ -250,15 +257,13 @@ snaive_grid_tbl <- tibble(
 (models <- union(snaive_grid_tbl %>% select(.models), window_grid_median_tbl %>% select(.models)))
 ```
 
-Once we have our models, the next step is to cross them with the four preprocessing recipes to create the workflowsets object. The models are then calculated through the `modeltime_fit_workflowsets()` function (new functionality that allows integrating the Modeltime and Workflowsets package). We will do it in parallel so that the result takes less time to execute using six cores:
+Once we have our models, the next step is to cross them with the two preprocessing recipes to create the workflowsets object(we do not use the other two because we would have to modify the code because it would fail to convert the ids into dummy variables). The models are then calculated through the `modeltime_fit_workflowsets()` function (new functionality that allows integrating the Modeltime and Workflowsets package). We will do it in parallel so that the result takes less time to execute using six cores:
 
 ```{r, warning=FALSE, message=FALSE}
 wfset <- workflow_set(
     preproc = list(
         recipe_basic,
-        recipe_basic_features,
-        recipe_outliers,
-        recipe_outliers_features
+        recipe_outliers
     ),
     models = models$.models,
     cross  = TRUE
