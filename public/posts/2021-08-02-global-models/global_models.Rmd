@@ -26,7 +26,7 @@ A global model is a single model that forecasts all time series at once. Global 
 
 ## Use Case: Prediction 🔮 of Electricity Generation 💡 by Sectors of the Generalitat de Catalunya. 
 
-⚠️ Warning️ ⚠️: The aim of this post is not to achieve the best possible results, as this would require considerable dedication in tasks such as Feature Engineering. What is intended is to show a working methodology when using the Modeltime package for global models. 
+⚠️ **Warning️** ⚠️: The aim of this post is not to achieve the best possible results, as this would require considerable dedication in tasks such as Feature Engineering. What is intended is to show a working methodology when using the Modeltime package for global models. 
 
 For this post we are going to use the dataset found in the page https://datos.gob.es/ uploaded by the Generalitat de catalunya which measures the electricity generation (GWh) in the period 2005-2020 and whose analysis will be performed for different sectors of the economy.
 
@@ -54,13 +54,13 @@ library(reactable)
 library(reactablefmtr)
 library(RColorBrewer)
 
-reactable(
-  df %>% head(),
-  defaultColDef = colDef(
-    style = color_scales(df %>% head(), span = TRUE, colors = c("#1e90ff", "#ffffff", "#ff3030")),
-    minWidth = 70
-  )
-)
+# reactable(
+#   df %>% head(),
+#   defaultColDef = colDef(
+#     style = color_scales(df %>% head(), span = TRUE, colors = c("#1e90ff", "#ffffff", "#ff3030")),
+#     minWidth = 70
+#   )
+# )
 ```
 
 The next step is to clean the data. To do this we select those columns we are interested in and transform the date field to adapt it to the format we are interested in modeling.
@@ -73,15 +73,16 @@ df <- df %>%
     rename_with(.cols = starts_with("FEEI"),
                 .fn   = ~str_replace(., "FEEI_", ""))
 
+head(df)
 ```
 
 ```{r, echo=FALSE}
-reactable(
-  df,
-  defaultColDef = colDef(
-    cell = color_tiles(df, colors = brewer.pal(n = 3, name = 'RdYlGn') %>% rev(), number_fmt = scales::number_format(accuracy = 0.1, suffix = " GWh"))
-  )
-)
+# reactable(
+#   df,
+#   defaultColDef = colDef(
+#     cell = color_tiles(df, colors = brewer.pal(n = 3, name = 'RdYlGn') %>% rev(), number_fmt = scales::number_format(accuracy = 0.1, suffix = " GWh"))
+#   )
+# )
 ```
 
 If you notice, our dataset is not yet in the right format to be used by a global model, we need to put each time series on top of each other (panel data). Let's get to it:
@@ -91,16 +92,18 @@ df <- df %>%
         pivot_longer(-date) %>%
         rename(id = name) %>%
         mutate(id = as.factor(id))
+
+head(df)
 ```
 
 ```{r, echo=FALSE}
-reactable(
-  df %>% head(10),
-  defaultColDef = colDef(align = "left", maxWidth = 200),
-  columns = list(
-    value = colDef(cell = icon_assign(df %>% head(10), icon = "lightbulb", fill_color = "#ffd633", empty_color = "white", buckets = 3, show_values = "right", number_fmt = scales::number_format(accuracy = 0.1, suffix = " GWh")))
-  )
-)
+# reactable(
+#   df %>% head(10),
+#   defaultColDef = colDef(align = "left", maxWidth = 200),
+#   columns = list(
+#     value = colDef(cell = icon_assign(df %>% head(10), icon = "lightbulb", fill_color = "#ffd633", empty_color = "white", buckets = 3, show_values = "right", number_fmt = scales::number_format(accuracy = 0.1, suffix = " GWh")))
+#   )
+# )
 ```
 
 The next step will be to visualize our time series through the `plot_time_series()` function. We will also use the `plot_anomaly_diagnostics()` function to visualize the outliers detected by this function in each series. For the visualization we will make use of the `automagic_tabs2` functionality to be able to visualize each time series in a different tab in a comfortable way. 
@@ -165,16 +168,18 @@ df<- df %>%
       select(anomaly)
   ) %>%
   rename(id = name)
+
+head(df)
 ```
 
 ```{r, echo=FALSE}
-reactable(
-  df %>% head(),
-  defaultColDef = colDef(
-    style = color_scales(df %>% head(), span = TRUE, colors = c("#1e90ff", "#ffffff", "#ff3030")),
-    minWidth = 70
-  )
-)
+# reactable(
+#   df %>% head(),
+#   defaultColDef = colDef(
+#     style = color_scales(df %>% head(), span = TRUE, colors = c("#1e90ff", "#ffffff", "#ff3030")),
+#     minWidth = 70
+#   )
+# )
 ```
 
 Once we have the dataset in the format we are interested in, the next step is to continue with the modeling.
