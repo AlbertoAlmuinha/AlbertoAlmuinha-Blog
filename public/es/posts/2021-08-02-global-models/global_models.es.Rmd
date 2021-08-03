@@ -178,6 +178,11 @@ df<- df %>%
       select(anomaly)
   ) %>%
   rename(id = name)
+
+head(df) %>% 
+  gt() %>% 
+  tab_header(title = md('**Datos en Formato Panel**')) %>% 
+  opt_align_table_header('left')
 ```
 
 ```{r, echo=FALSE}

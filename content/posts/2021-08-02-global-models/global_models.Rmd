@@ -176,7 +176,10 @@ df<- df %>%
   ) %>%
   rename(id = name)
 
-head(df)
+head(df) %>% 
+  gt() %>% 
+  tab_header(title = md('**Panel Data**')) %>% 
+  opt_align_table_header('left')
 ```
 
 ```{r, echo=FALSE}
