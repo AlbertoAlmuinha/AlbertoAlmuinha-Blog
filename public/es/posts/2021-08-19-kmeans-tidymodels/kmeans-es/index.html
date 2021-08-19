@@ -1,0 +1,3214 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head prefix="og: http://ogp.me/ns# article: http://ogp.me/ns/article#">
+    <meta charset="UTF-8" />
+
+    <meta name="generator" content="Hugo 0.81.0" /><meta name="theme-color" content="#16171d" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
+    
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+
+    <title>Tidytuesday, KMeans y Tidymodels | AlbertoAlmuiña</title>
+
+    <link rel="stylesheet" href="/es/css/meme.min.82a998858d75bc2a043de7b21539366e813410b171417d364957704fb21a9faa.css"/>
+
+    
+    
+        <script src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/lunr-languages@1.4.0/min/lunr.stemmer.support.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/lunr-languages@1.4.0/min/lunr.es.min.js" defer></script><script src="/es/js/meme.min.3a6ae89f02640f2a76b2eac891aa79e27bf00e5b88b481d61a75a64b61bd0c7e.js"></script>
+
+    
+	
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM&#43;Plex&#43;Serif:ital,wght@0,400;0,500;0,700;1,400;1,700&amp;family=Source&#43;Code&#43;Pro:ital,wght@0,400;0,700;1,400;1,700&amp;family=Comfortaa:wght@700&amp;display=swap" media="print" onload="this.media='all'" />
+        <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM&#43;Plex&#43;Serif:ital,wght@0,400;0,500;0,700;1,400;1,700&amp;family=Source&#43;Code&#43;Pro:ital,wght@0,400;0,700;1,400;1,700&amp;family=Comfortaa:wght@700&amp;display=swap" /></noscript>
+
+    <meta name="author" content="Alberto Almuiña" /><meta name="description" content="Una introducción al uso de Kmeans con Tidymodels" />
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#2a6df4" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="AlbertoAlmuiña" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="AlbertoAlmuiña" />
+    <meta name="msapplication-starturl" content="../../../../" />
+    <meta name="msapplication-TileColor" content="#fff" />
+    <meta name="msapplication-TileImage" content="../../../../icons/mstile-150x150.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    
+    
+
+    
+    <link rel="canonical" href="https://AlbertoAlmui%C3%B1a.com/es/posts/2021-08-19-kmeans-tidymodels/kmeans-es/" />
+    
+
+<script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "datePublished": "2021-08-19T02:13:14-05:00",
+        "dateModified": "2021-08-19T20:57:08+02:00",
+        "url": "https://AlbertoAlmui%C3%B1a.com/es/posts/2021-08-19-kmeans-tidymodels/kmeans-es/",
+        "headline": "Tidytuesday, KMeans y Tidymodels",
+        "description": "Una introducción al uso de Kmeans con Tidymodels",
+        "inLanguage" : "es",
+        "articleSection": "posts",
+        "wordCount":  5484 ,
+        "image": ["https://AlbertoAlmui%C3%B1a.com/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-4-1.png","https://AlbertoAlmui%C3%B1a.com/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-5-1.png","https://AlbertoAlmui%C3%B1a.com/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-6-1.png","https://AlbertoAlmui%C3%B1a.com/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-7-1.png","https://AlbertoAlmui%C3%B1a.com/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-8-1.png","https://AlbertoAlmui%C3%B1a.com/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-12-1.png","https://AlbertoAlmui%C3%B1a.com/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-13-1.png","https://AlbertoAlmui%C3%B1a.com/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-14-1.png"],
+        "author": {
+            "@type": "Person",
+            "email": "albertogonzalezalmuinha@gmail.com",
+            "image": "https://AlbertoAlmui%C3%B1a.com/icons/apple-touch-icon.png",
+            "url": "https://albertoalmuinha.com/",
+            "name": "Alberto Almuiña"
+        },
+        "license": "[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en)",
+        "publisher": {
+            "@type": "Organization",
+            "name": "AlbertoAlmuiña",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://AlbertoAlmui%C3%B1a.com/icons/apple-touch-icon.png"
+            },
+            "url": "https://AlbertoAlmui%C3%B1a.com/es/"
+        },
+        "mainEntityOfPage": {
+            "@type": "WebSite",
+            "@id": "https://AlbertoAlmui%C3%B1a.com/es/"
+        }
+    }
+</script>
+
+    
+
+<meta name="twitter:card" content="summary_large_image" />
+
+
+<meta name="twitter:site" content="@AlmuinaAlberto" />
+<meta name="twitter:creator" content="@AlmuinaAlberto" />
+
+    
+
+
+
+<meta property="og:title" content="Tidytuesday, KMeans y Tidymodels" />
+<meta property="og:description" content="Una introducción al uso de Kmeans con Tidymodels" />
+<meta property="og:url" content="https://AlbertoAlmui%C3%B1a.com/es/posts/2021-08-19-kmeans-tidymodels/kmeans-es/" />
+<meta property="og:site_name" content="AlbertoAlmuiña" />
+<meta property="og:locale" content="es" />
+            <meta property="og:locale:alternate" content="en" />
+        <meta property="og:image" content="https://AlbertoAlmui%C3%B1a.com/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-4-1.png" />
+<meta property="og:type" content="article" />
+    <meta property="article:published_time" content="2021-08-19T02:13:14-05:00" />
+    <meta property="article:modified_time" content="2021-08-19T20:57:08&#43;02:00" />
+    
+    <meta property="article:section" content="posts" />
+
+
+
+    
+    
+    <link rel="stylesheet" href="/css/default.min.css" rel="stylesheet" id="theme-stylesheet"> 
+	<script src="/js/highlight.js"></script>
+	<script>hljs.highlightAll();</script>
+
+    
+</head>
+
+    <body>
+        <div class="container">
+            
+    <header class="header">
+        
+            <div class="header-wrapper">
+                <div class="header-inner single">
+                    
+    <div class="site-brand">
+        
+            <a href="/es/" class="brand">AlbertoAlmuiña</a>
+        
+    </div>
+
+                    <nav class="nav">
+    <ul class="menu" id="menu">
+        
+            
+        
+        
+        
+        
+            
+                <li class="menu-item"><a href="/posts/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon archive"><path d="M32 448c0 17.7 14.3 32 32 32h384c17.7 0 32-14.3 32-32V160H32v288zm160-212c0-6.6 5.4-12 12-12h104c6.6 0 12 5.4 12 12v8c0 6.6-5.4 12-12 12H204c-6.6 0-12-5.4-12-12v-8zM480 32H32C14.3 32 0 46.3 0 64v48c0 8.8 7.2 16 16 16h480c8.8 0 16-7.2 16-16V64c0-17.7-14.3-32-32-32z"/></svg><span class="menu-item-name">Posts</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/categories/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon th"><path d="M149.333 56v80c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V56c0-13.255 10.745-24 24-24h101.333c13.255 0 24 10.745 24 24zm181.334 240v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm32-240v80c0 13.255 10.745 24 24 24H488c13.255 0 24-10.745 24-24V56c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24zm-32 80V56c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm-205.334 56H24c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24zM0 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H24c-13.255 0-24 10.745-24 24zm386.667-56H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zm0 160H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zM181.333 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24z"/></svg><span class="menu-item-name">Categories</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/tags/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" class="icon tags"><path d="M497.941 225.941L286.059 14.059A48 48 0 0 0 252.118 0H48C21.49 0 0 21.49 0 48v204.118a48 48 0 0 0 14.059 33.941l211.882 211.882c18.744 18.745 49.136 18.746 67.882 0l204.118-204.118c18.745-18.745 18.745-49.137 0-67.882zM112 160c-26.51 0-48-21.49-48-48s21.49-48 48-48 48 21.49 48 48-21.49 48-48 48zm513.941 133.823L421.823 497.941c-18.745 18.745-49.137 18.745-67.882 0l-.36-.36L527.64 323.522c16.999-16.999 26.36-39.6 26.36-63.64s-9.362-46.641-26.36-63.64L331.397 0h48.721a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882z"/></svg><span class="menu-item-name">Tags</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/about/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" class="icon user-circle"><path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 96c48.6 0 88 39.4 88 88s-39.4 88-88 88-88-39.4-88-88 39.4-88 88-88zm0 344c-58.7 0-111.3-26.6-146.5-68.2 18.8-35.4 55.6-59.8 98.5-59.8 2.4 0 4.8.4 7.1 1.1 13 4.2 26.6 6.9 40.9 6.9 14.3 0 28-2.7 40.9-6.9 2.3-.7 4.7-1.1 7.1-1.1 42.9 0 79.7 24.4 98.5 59.8C359.3 421.4 306.7 448 248 448z"/></svg><span class="menu-item-name">About</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/newsletter/newsletter/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon envelope"><path d="M464 64H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm0 48v40.805c-22.422 18.259-58.168 46.651-134.587 106.49-16.841 13.247-50.201 45.072-73.413 44.701-23.208.375-56.579-31.459-73.413-44.701C106.18 199.465 70.425 171.067 48 152.805V112h416zM48 400V214.398c22.914 18.251 55.409 43.862 104.938 82.646 21.857 17.205 60.134 55.186 103.062 54.955 42.717.231 80.509-37.199 103.053-54.947 49.528-38.783 82.032-64.401 104.947-82.653V400H48z"/></svg><span class="menu-item-name">NewsletteR</span></a>
+                </li>
+            
+        
+            
+                
+                    
+                    
+                        <li class="menu-item">
+                            <a id="theme-switcher" href="#"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon theme-icon-light"><path d="M193.2 104.5l48.8-97.5a18 18 0 0128 0l48.8 97.5 103.4 -34.5a18 18 0 0119.8 19.8l-34.5 103.4l97.5 48.8a18 18 0 010 28l-97.5 48.8 34.5 103.4a18 18 0 01-19.8 19.8l-103.4-34.5-48.8 97.5a18 18 0 01-28 0l-48.8-97.5l-103.4 34.5a18 18 0 01-19.8-19.8l34.5-103.4-97.5-48.8a18 18 0 010-28l97.5-48.8-34.5-103.4a18 18 0 0119.8-19.8zM256 128a128 128 0 10.01 0M256 160a96 96 0 10.01 0"/></svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon theme-icon-dark"><path d="M27 412a256 256 0 10154-407a11.5 11.5 0 00-5 20a201.5 201.5 0 01-134 374a11.5 11.5 0 00-15 13"/></svg></a>
+                        </li>
+                    
+                
+            
+        
+            
+                
+                    
+                        
+                        
+                            <li class="menu-item">
+                                <div id="lang-switcher">
+            <span>Español</span>
+            
+                <ul id="langs">
+                    
+                        <li><a rel="alternate" href="/posts/2021-08-19-kmeans-tidymodels/kmeans/" hreflang="en" lang="en">English</a></li>
+                    
+                </ul>
+            
+        </div>
+                            </li>
+                        
+                    
+                
+            
+        
+    </ul>
+</nav>
+
+                    
+                </div>
+            </div>
+            
+    <input type="checkbox" id="nav-toggle" aria-hidden="true" />
+    <label for="nav-toggle" class="nav-toggle"></label>
+    <label for="nav-toggle" class="nav-curtain"></label>
+
+
+        
+    </header>
+
+
+
+
+            
+            
+    <main class="main single" id="main">
+    <div class="main-inner">
+
+        
+
+        <article class="content post h-entry" data-small-caps="true" data-align="default" data-type="posts" data-toc-num="true">
+
+            <h1 class="post-title p-name">Tidytuesday, KMeans y Tidymodels</h1>
+
+            
+
+            
+                <div class="post-description p-summary">Una introducción al uso de Kmeans con Tidymodels</div>
+                
+            
+
+            
+                
+
+<div class="post-meta">
+    
+        
+        <time datetime="2021-08-19T02:13:14-05:00" class="post-meta-item published dt-published"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon post-meta-icon"><path d="M148 288h-40c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12zm108-12v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 96v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm192 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96-260v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V112c0-26.5 21.5-48 48-48h48V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h128V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h48c26.5 0 48 21.5 48 48zm-48 346V160H48v298c0 3.3 2.7 6 6 6h340c3.3 0 6-2.7 6-6z"/></svg>&nbsp;2021.8.19</time>
+    
+    
+        
+        <time datetime="2021-08-19T20:57:08&#43;02:00" class="post-meta-item modified dt-updated"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon post-meta-icon"><path d="M400 64h-48V12c0-6.627-5.373-12-12-12h-40c-6.627 0-12 5.373-12 12v52H160V12c0-6.627-5.373-12-12-12h-40c-6.627 0-12 5.373-12 12v52H48C21.49 64 0 85.49 0 112v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm-6 400H54a6 6 0 0 1-6-6V160h352v298a6 6 0 0 1-6 6zm-52.849-200.65L198.842 404.519c-4.705 4.667-12.303 4.637-16.971-.068l-75.091-75.699c-4.667-4.705-4.637-12.303.068-16.971l22.719-22.536c4.705-4.667 12.303-4.637 16.97.069l44.104 44.461 111.072-110.181c4.705-4.667 12.303-4.637 16.971.068l22.536 22.718c4.667 4.705 4.636 12.303-.069 16.97z"/></svg>&nbsp;2021.8.19</time>
+    
+    
+    
+        
+        
+        
+            
+                <span class="post-meta-item category"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M464 128H272l-54.63-54.63c-6-6-14.14-9.37-22.63-9.37H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V176c0-26.51-21.49-48-48-48zm0 272H48V112h140.12l54.63 54.63c6 6 14.14 9.37 22.63 9.37H464v224z"/></svg>&nbsp;<a href="/es/categories/tidymodels/" class="category-link p-category">tidymodels</a></span>
+            
+        
+    
+    
+        
+        <span class="post-meta-item wordcount"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M497.9 142.1l-46.1 46.1c-4.7 4.7-12.3 4.7-17 0l-111-111c-4.7-4.7-4.7-12.3 0-17l46.1-46.1c18.7-18.7 49.1-18.7 67.9 0l60.1 60.1c18.8 18.7 18.8 49.1 0 67.9zM284.2 99.8L21.6 362.4.4 483.9c-2.9 16.4 11.4 30.6 27.8 27.8l121.5-21.3 262.6-262.6c4.7-4.7 4.7-12.3 0-17l-111-111c-4.8-4.7-12.4-4.7-17.1 0zM124.1 339.9c-5.5-5.5-5.5-14.3 0-19.8l154-154c5.5-5.5 14.3-5.5 19.8 0s5.5 14.3 0 19.8l-154 154c-5.5 5.5-14.3 5.5-19.8 0zM88 424h48v36.3l-64.5 11.3-31.1-31.1L51.7 376H88v48z"/></svg>&nbsp;5484</span>
+    
+    
+        
+        <span class="post-meta-item reading-time"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200zm61.8-104.4l-84.9-61.7c-3.1-2.3-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v141.7l66.8 48.6c5.4 3.9 6.5 11.4 2.6 16.8L334.6 349c-3.9 5.3-11.4 6.5-16.8 2.6z"/></svg>&nbsp;26&nbsp;mins</span>
+    
+    
+    
+</div>
+
+            
+
+            <div class="post-body e-content">
+              
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<div id="análisis-de-datos-económicos-eeuu" class="section level2">
+<h2>Análisis de Datos Económicos: EEUU 📈</h2>
+<p style="text-indent:0"><span class="drop-cap">E</span>n este blog post analizaremos los datos correspondientes a la semana 9 de 2021 de <code>TidyTuesday</code> donde se ven los salarios medianos semanales y el número de personas empleadas por sexo, raza y edad a lo largo del tiempo (en concreto se analiza el período 2010-2020). Tenemos dos opciones para descargar los datos: la primera es utilizar el paquete <code>tidytuesdayR</code> pasando como argumento a la función principal la semana de los juegos de datos que deseamos descargar, mientras que la segunda opción es descargar los datos directamente desde el enlace en el que están alojados:</p>
+<pre class="r"><code>library(tidytuesdayR)
+library(tidyverse)
+library(broom)
+library(gt)
+
+#Option 1
+tidyweek &lt;- &#39;2021-02-23&#39;
+tuesdata &lt;- tidytuesdayR::tt_load(tidyweek)</code></pre>
+<pre><code>## 
+##  Downloading file 1 of 2: `earn.csv`
+##  Downloading file 2 of 2: `employed.csv`</code></pre>
+<pre class="r"><code>earn &lt;- tuesdata$earn
+
+#Option 2
+earn &lt;- readr::read_csv(&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-23/earn.csv&#39;)
+
+earn %&gt;% 
+  head() %&gt;%
+  gt() %&gt;%
+  tab_header(title = md(&quot;Datos de Salarios Medianos en EEUU&quot;))</code></pre>
+<div id="tvgzyskavh" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#tvgzyskavh .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#tvgzyskavh .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#tvgzyskavh .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#tvgzyskavh .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 4px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#tvgzyskavh .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#tvgzyskavh .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#tvgzyskavh .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#tvgzyskavh .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#tvgzyskavh .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#tvgzyskavh .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#tvgzyskavh .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#tvgzyskavh .gt_group_heading {
+  padding: 8px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#tvgzyskavh .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#tvgzyskavh .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#tvgzyskavh .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#tvgzyskavh .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#tvgzyskavh .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 12px;
+}
+
+#tvgzyskavh .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#tvgzyskavh .gt_first_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+}
+
+#tvgzyskavh .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#tvgzyskavh .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#tvgzyskavh .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#tvgzyskavh .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#tvgzyskavh .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#tvgzyskavh .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding: 4px;
+}
+
+#tvgzyskavh .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#tvgzyskavh .gt_sourcenote {
+  font-size: 90%;
+  padding: 4px;
+}
+
+#tvgzyskavh .gt_left {
+  text-align: left;
+}
+
+#tvgzyskavh .gt_center {
+  text-align: center;
+}
+
+#tvgzyskavh .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#tvgzyskavh .gt_font_normal {
+  font-weight: normal;
+}
+
+#tvgzyskavh .gt_font_bold {
+  font-weight: bold;
+}
+
+#tvgzyskavh .gt_font_italic {
+  font-style: italic;
+}
+
+#tvgzyskavh .gt_super {
+  font-size: 65%;
+}
+
+#tvgzyskavh .gt_footnote_marks {
+  font-style: italic;
+  font-weight: normal;
+  font-size: 65%;
+}
+</style>
+<div class="table-container"><table class="gt_table">
+  <thead class="gt_header">
+    <tr>
+      <th colspan="8" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>Datos de Salarios Medianos en EEUU</th>
+    </tr>
+    
+  </thead>
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">sex</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">race</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">ethnic_origin</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">age</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">year</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">quarter</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">n_persons</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">median_weekly_earn</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td class="gt_row gt_left">Both Sexes</td>
+<td class="gt_row gt_left">All Races</td>
+<td class="gt_row gt_left">All Origins</td>
+<td class="gt_row gt_left">16 years and over</td>
+<td class="gt_row gt_right">2010</td>
+<td class="gt_row gt_right">1</td>
+<td class="gt_row gt_right">96821000</td>
+<td class="gt_row gt_right">754</td></tr>
+    <tr><td class="gt_row gt_left">Both Sexes</td>
+<td class="gt_row gt_left">All Races</td>
+<td class="gt_row gt_left">All Origins</td>
+<td class="gt_row gt_left">16 years and over</td>
+<td class="gt_row gt_right">2010</td>
+<td class="gt_row gt_right">2</td>
+<td class="gt_row gt_right">99798000</td>
+<td class="gt_row gt_right">740</td></tr>
+    <tr><td class="gt_row gt_left">Both Sexes</td>
+<td class="gt_row gt_left">All Races</td>
+<td class="gt_row gt_left">All Origins</td>
+<td class="gt_row gt_left">16 years and over</td>
+<td class="gt_row gt_right">2010</td>
+<td class="gt_row gt_right">3</td>
+<td class="gt_row gt_right">101385000</td>
+<td class="gt_row gt_right">740</td></tr>
+    <tr><td class="gt_row gt_left">Both Sexes</td>
+<td class="gt_row gt_left">All Races</td>
+<td class="gt_row gt_left">All Origins</td>
+<td class="gt_row gt_left">16 years and over</td>
+<td class="gt_row gt_right">2010</td>
+<td class="gt_row gt_right">4</td>
+<td class="gt_row gt_right">100120000</td>
+<td class="gt_row gt_right">752</td></tr>
+    <tr><td class="gt_row gt_left">Both Sexes</td>
+<td class="gt_row gt_left">All Races</td>
+<td class="gt_row gt_left">All Origins</td>
+<td class="gt_row gt_left">16 years and over</td>
+<td class="gt_row gt_right">2011</td>
+<td class="gt_row gt_right">1</td>
+<td class="gt_row gt_right">98329000</td>
+<td class="gt_row gt_right">755</td></tr>
+    <tr><td class="gt_row gt_left">Both Sexes</td>
+<td class="gt_row gt_left">All Races</td>
+<td class="gt_row gt_left">All Origins</td>
+<td class="gt_row gt_left">16 years and over</td>
+<td class="gt_row gt_right">2011</td>
+<td class="gt_row gt_right">2</td>
+<td class="gt_row gt_right">100593000</td>
+<td class="gt_row gt_right">753</td></tr>
+  </tbody>
+  
+  
+</table></div>
+</div>
+<p>Vamos a utilizar el paquete <code>skimr</code> para una primera aproximación al juego de datos. A través de la función <code>skim()</code> obtendremos información muy útil sobre las variables dividas por su tipo:</p>
+<pre class="r"><code>skimr::skim(earn)</code></pre>
+<div class="table-container"><table>
+<caption><span id="tab:unnamed-chunk-2">Table 1: </span>Data summary</caption>
+<tbody>
+<tr class="odd">
+<td align="left">Name</td>
+<td align="left">earn</td>
+</tr>
+<tr class="even">
+<td align="left">Number of rows</td>
+<td align="left">4224</td>
+</tr>
+<tr class="odd">
+<td align="left">Number of columns</td>
+<td align="left">8</td>
+</tr>
+<tr class="even">
+<td align="left">_______________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Column type frequency:</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">character</td>
+<td align="left">4</td>
+</tr>
+<tr class="odd">
+<td align="left">numeric</td>
+<td align="left">4</td>
+</tr>
+<tr class="even">
+<td align="left">________________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Group variables</td>
+<td align="left">None</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Variable type: character</strong></p>
+<div class="table-container"><table>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">min</th>
+<th align="right">max</th>
+<th align="right">empty</th>
+<th align="right">n_unique</th>
+<th align="right">whitespace</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">sex</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">3</td>
+<td align="right">10</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">race</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">5</td>
+<td align="right">25</td>
+<td align="right">0</td>
+<td align="right">4</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">ethnic_origin</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">11</td>
+<td align="right">18</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">age</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">14</td>
+<td align="right">17</td>
+<td align="right">0</td>
+<td align="right">12</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Variable type: numeric</strong></p>
+<div class="table-container"><table>
+<colgroup>
+<col width="12%" />
+<col width="6%" />
+<col width="8%" />
+<col width="7%" />
+<col width="7%" />
+<col width="4%" />
+<col width="6%" />
+<col width="6%" />
+<col width="7%" />
+<col width="6%" />
+<col width="26%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">mean</th>
+<th align="right">sd</th>
+<th align="right">p0</th>
+<th align="right">p25</th>
+<th align="right">p50</th>
+<th align="right">p75</th>
+<th align="right">p100</th>
+<th align="left">hist</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">year</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">2015.00</td>
+<td align="right">3.16</td>
+<td align="right">2010</td>
+<td align="right">2.012e+03</td>
+<td align="right">2015.0</td>
+<td align="right">2018.00</td>
+<td align="right">2020</td>
+<td align="left">▇▅▅▅▅</td>
+</tr>
+<tr class="even">
+<td align="left">quarter</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">2.50</td>
+<td align="right">1.12</td>
+<td align="right">1</td>
+<td align="right">1.750e+00</td>
+<td align="right">2.5</td>
+<td align="right">3.25</td>
+<td align="right">4</td>
+<td align="left">▇▇▁▇▇</td>
+</tr>
+<tr class="odd">
+<td align="left">n_persons</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">16268337.59</td>
+<td align="right">22421840.69</td>
+<td align="right">103000</td>
+<td align="right">2.614e+06</td>
+<td align="right">7441000.0</td>
+<td align="right">17555250.00</td>
+<td align="right">118358000</td>
+<td align="left">▇▁▁▁▁</td>
+</tr>
+<tr class="even">
+<td align="left">median_weekly_earn</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">762.18</td>
+<td align="right">217.21</td>
+<td align="right">318</td>
+<td align="right">6.050e+02</td>
+<td align="right">755.0</td>
+<td align="right">911.00</td>
+<td align="right">1709</td>
+<td align="left">▅▇▅▁▁</td>
+</tr>
+</tbody>
+</table></div>
+<p>Podemos observar que las variables <code>sex</code>, <code>race</code> y <code>ethnic_origin</code> tienen un número limitado de niveles (valores únicos) mientras que la variable <code>edad</code> está dividida en más niveles (12). También se puede observar que la variable número de personas contratadas tiene una alta variabilidad, lo cuál nos da una pista de que muy posiblemente tendremos que tratar esta variable si queremos utilizarla de manera efectiva. Vamos a comprobar de manera rápida cuales son los valores de las variables categóricas:</p>
+<pre class="r"><code>earn %&gt;%
+  select_if(is_character) %&gt;%
+  map(unique)</code></pre>
+<pre><code>## $sex
+## [1] &quot;Both Sexes&quot; &quot;Men&quot;        &quot;Women&quot;     
+## 
+## $race
+## [1] &quot;All Races&quot;                 &quot;White&quot;                    
+## [3] &quot;Black or African American&quot; &quot;Asian&quot;                    
+## 
+## $ethnic_origin
+## [1] &quot;All Origins&quot;        &quot;Hispanic or Latino&quot;
+## 
+## $age
+##  [1] &quot;16 years and over&quot; &quot;16 to 24 years&quot;    &quot;16 to 19 years&quot;   
+##  [4] &quot;20 to 24 years&quot;    &quot;25 years and over&quot; &quot;25 to 54 years&quot;   
+##  [7] &quot;25 to 34 years&quot;    &quot;35 to 44 years&quot;    &quot;45 to 54 years&quot;   
+## [10] &quot;55 years and over&quot; &quot;55 to 64 years&quot;    &quot;65 years and over&quot;</code></pre>
+<p>Lo que observamos es que los valores de la edad se solapan, por lo que no parece claro que lógica siguen los niveles en esa variable. En el siguiente apartado de visualización de datos profundizaremos en esta variable para ver cómo se distribuyen estos valores en función de las otras variables.</p>
+</div>
+<div id="visualización-de-los-datos" class="section level2">
+<h2>Visualización de los Datos 🔎📊</h2>
+<p>Vamos a ver cómo varía la edad en función del sexo y la raza para ver si podemos ver que se estén utilizando diferentes escalas que no se solapen para diferentes niveles de otras variables. Comprobémoslo:</p>
+<pre class="r"><code>earn %&gt;%
+  filter(sex != &quot;Both Sexes&quot;) %&gt;%
+  ggplot(aes(race, age, color = sex)) +
+  geom_count() +
+  facet_wrap(~sex) +
+  coord_flip() +
+  tidyquant::theme_tq() + 
+  ylab(NULL) +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = &quot;right&quot;) </code></pre>
+<p><img src="/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p>Desafortunadamente, vemos que los niveles se siguen solapando para los niveles de las variables <code>race</code> y <code>sex</code>, por lo que esta variable no nos será muy útil.</p>
+<p>A continuación vamos a analizar como varía el salario mediano semanal en función del sexo y de la raza:</p>
+<pre class="r"><code>earn %&gt;%
+  filter(sex != &quot;Both Sexes&quot;) %&gt;%
+  ggplot(aes(median_weekly_earn, fill = sex)) +
+  geom_histogram(color = &quot;black&quot;) +
+  scale_fill_manual(values = c(&quot;#FFB612&quot;, &quot;#97233F&quot;)) +
+  tidyquant::theme_tq() +
+  facet_wrap(~race, nrow = 2, scales = &quot;free&quot;) +
+  theme(legend.position = &quot;right&quot;)</code></pre>
+<p><img src="/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>Aquí ya tenemos las primeras conclusiones interesantes: Podemos ver como los hombres cobran más que las mujeres independientemente de la raza (como puede verse al crecer las barras de color rojo de los últimos tramos de las distribuciones respecto a las azules). También es interesante ver como las personas negras o africanas tienen unos rangos menores que las otras razas (su máximo está en torno a 900, mientras que el máximo de los blancos está por encima de los 1250 y el de los asiáticos por encima de los 1500). También es interesante ver como la zona intermedia de la distribución es mayoritariamente de las mujeres en todas las razas mientras que en los primeros valores vemos un mayor equilibrio entro sexos.</p>
+<pre class="r"><code>earn %&gt;%
+  filter(sex != &quot;Both Sexes&quot;) %&gt;%
+  ggplot(aes(median_weekly_earn, fill = sex)) +
+  geom_histogram(color = &quot;black&quot;, position = &quot;dodge&quot;) +
+  tidyquant::theme_tq() +
+  scale_fill_manual(values = c(&quot;#FFB612&quot;, &quot;#97233F&quot;)) +
+  scale_x_continuous(limits = c(300, 1800)) +
+  facet_wrap(~ethnic_origin, nrow = 2, scales = &quot;free&quot;) +
+  theme(legend.position = &quot;right&quot;)</code></pre>
+<p><img src="/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p>Se observa el mismo patrón que vimos en el gráfico anterior, donde vemos como por lo general los hombres cobran más que las mujeres. También se observa como los hispanos tienen unos sueldos menores a la media (tanto hombres como mujeres) como puede verse en los rangos que alcanzan las distribuciones (el valor máximo para los hispanos no alcanza los 900 dólares semanales de mediana)</p>
+<pre class="r"><code>earn %&gt;%
+  filter(sex != &quot;Both Sexes&quot;) %&gt;%
+  filter(ethnic_origin == &quot;All Origins&quot; &amp; !is.na(age)) %&gt;%
+  mutate(yearq = as.Date(paste(year, case_when(nchar(quarter*3) == 1 ~ paste(&quot;0&quot;, quarter*3, sep = &quot;&quot;),
+                                       TRUE ~ as.character(quarter*3)), &quot;01&quot;, sep = &quot;-&quot;))) %&gt;%
+  group_by(sex, race, yearq) %&gt;%
+  summarise(median_weekly_earn = median(median_weekly_earn),
+            n_persons          = sum(n_persons)) %&gt;%
+  ungroup() %&gt;%
+  mutate(agrupar = paste(sex, race, sep = &quot;-&quot;),
+         agrupar = case_when(agrupar == &quot;Men-Black or African American&quot; ~ &quot;Men-Black/African&quot;,
+                             agrupar == &quot;Women-Black or African American&quot; ~ &quot;Women-Black/African&quot;,
+                             TRUE ~ agrupar)) %&gt;%
+  group_by(agrupar) %&gt;%
+  timetk::plot_time_series(
+    .date_var    = yearq,
+    .value       = median_weekly_earn,
+    .color_var   = agrupar, 
+    .smooth      = FALSE,
+    .facet_ncol  = 3,
+    .line_size   = 0.8, 
+    .interactive = FALSE,
+    .legend_show = FALSE
+  ) +
+  ggtitle(&quot;Evolución Salario Mediano por Raza y Sexo&quot;) +
+  theme(plot.title = element_text(hjust = 0.5, margin = margin(b = 20)))</code></pre>
+<p><img src="/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<p>Claramente podemos ver una tendencia creciente para todas las razas y sexos entre los años 2010 y 2020, con un incremento superior del salario para las personas asiáticas sobre el resto de grupos estudiados (para ambos sexos, tanto hombres como mujeres). También es interesante comentar que este crecimiento tiene un comportamiento prácticamente lineal para las personas de raza blanca (tanto hombres como mujeres) mientras que para las personas tanto asiáticas como africanas/negras se observan mayores fluctuaciones en el crecimiento, no siendo tan lineal.</p>
+<pre class="r"><code>earn %&gt;%
+  filter(sex != &quot;Both Sexes&quot;) %&gt;%
+  filter(ethnic_origin == &quot;All Origins&quot; &amp; !is.na(age)) %&gt;%
+  mutate(yearq = as.Date(paste(year, case_when(nchar(quarter*3) == 1 ~ paste(&quot;0&quot;, quarter*3, sep = &quot;&quot;),
+                                       TRUE ~ as.character(quarter*3)), &quot;01&quot;, sep = &quot;-&quot;))) %&gt;%
+  group_by(sex, race, yearq) %&gt;%
+  summarise(median_weekly_earn = median(median_weekly_earn),
+            n_persons          = sum(n_persons)) %&gt;%
+  ungroup() %&gt;%
+  mutate(agrupar = paste(sex, race, sep = &quot;-&quot;),
+         agrupar = case_when(agrupar == &quot;Men-Black or African American&quot; ~ &quot;Men-Black/African&quot;,
+                             agrupar == &quot;Women-Black or African American&quot; ~ &quot;Women-Black/African&quot;,
+                             TRUE ~ agrupar)) %&gt;%
+  group_by(agrupar) %&gt;%
+  timetk::plot_time_series(
+    .date_var    = yearq,
+    .value       = n_persons,
+    .color_var   = agrupar, 
+    .smooth      = FALSE,
+    .facet_ncol  = 3,
+    .line_size   = 0.8, 
+    .interactive = FALSE,
+    .legend_show = FALSE
+  ) +
+  ggtitle(&quot;Evolución Personas Empleadas por Raza y Sexo&quot;) +
+  theme(plot.title = element_text(hjust = 0.5, margin = margin(b = 20)))</code></pre>
+<p><img src="/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p>Podemos ver claramente el efecto de la pandemia COVID en el año 2020 donde aparecen las caídas abruptas para todos los grupos analizados debido al shock inicial y se ve posteriormente el inicio de la recuperación. También resulta curioso ver como las caídas asiáticas han sido menos marcadas que las del resto de grupos (un ejercicio interesante sería ver cuáles son los motivos que se encuentran detrás de las diferencias en estos comportamientos).</p>
+</div>
+<div id="implementación-de-kmeans" class="section level2">
+<h2>Implementación de KMeans 🆒💎</h2>
+<p>El primer paso será adaptar el dataset para dejarlo en un formato adecuado para poder aplicar el algoritmo KMeans:</p>
+<pre class="r"><code>earn_tidy &lt;- earn %&gt;%
+  mutate(median_weekly = cut(median_weekly_earn, 50)) %&gt;%
+  group_by(sex, race,  median_weekly) %&gt;%
+  summarise(n_persons = sum(n_persons)) %&gt;%
+  select(sex, race, median_weekly, n_persons) %&gt;%
+  pivot_wider(names_from = sex:race, values_from = n_persons, id_cols = median_weekly, values_fill = 0) %&gt;%
+  janitor::clean_names() %&gt;%
+  mutate(across(where(is.numeric), ~as.numeric(scale(.))))
+
+earn_tidy %&gt;%
+  head() %&gt;%
+  gt() %&gt;%
+  tab_header(title = md(&quot;Datos Transformados Wider&quot;)) %&gt;%
+  opt_align_table_header(align = &quot;left&quot;)</code></pre>
+<div id="xtljqeviic" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#xtljqeviic .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#xtljqeviic .gt_heading {
+  background-color: #FFFFFF;
+  text-align: left;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#xtljqeviic .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#xtljqeviic .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 4px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#xtljqeviic .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xtljqeviic .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#xtljqeviic .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#xtljqeviic .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#xtljqeviic .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#xtljqeviic .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#xtljqeviic .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#xtljqeviic .gt_group_heading {
+  padding: 8px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#xtljqeviic .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#xtljqeviic .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#xtljqeviic .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#xtljqeviic .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#xtljqeviic .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 12px;
+}
+
+#xtljqeviic .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xtljqeviic .gt_first_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+}
+
+#xtljqeviic .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xtljqeviic .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#xtljqeviic .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#xtljqeviic .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xtljqeviic .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#xtljqeviic .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding: 4px;
+}
+
+#xtljqeviic .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#xtljqeviic .gt_sourcenote {
+  font-size: 90%;
+  padding: 4px;
+}
+
+#xtljqeviic .gt_left {
+  text-align: left;
+}
+
+#xtljqeviic .gt_center {
+  text-align: center;
+}
+
+#xtljqeviic .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#xtljqeviic .gt_font_normal {
+  font-weight: normal;
+}
+
+#xtljqeviic .gt_font_bold {
+  font-weight: bold;
+}
+
+#xtljqeviic .gt_font_italic {
+  font-style: italic;
+}
+
+#xtljqeviic .gt_super {
+  font-size: 65%;
+}
+
+#xtljqeviic .gt_footnote_marks {
+  font-style: italic;
+  font-weight: normal;
+  font-size: 65%;
+}
+</style>
+<div class="table-container"><table class="gt_table">
+  <thead class="gt_header">
+    <tr>
+      <th colspan="13" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>Datos Transformados Wider</th>
+    </tr>
+    
+  </thead>
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">median_weekly</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">both_sexes_all_races</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">both_sexes_asian</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">both_sexes_black_or_african_american</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">both_sexes_white</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">men_all_races</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">men_asian</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">men_black_or_african_american</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">men_white</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">women_all_races</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">women_asian</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">women_black_or_african_american</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">women_white</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td class="gt_row gt_center">(317,346]</td>
+<td class="gt_row gt_right">-0.6366053</td>
+<td class="gt_row gt_right">-0.7358740</td>
+<td class="gt_row gt_right">-0.4260281</td>
+<td class="gt_row gt_right">-0.5241838</td>
+<td class="gt_row gt_right">-0.7140515</td>
+<td class="gt_row gt_right">-0.7471606</td>
+<td class="gt_row gt_right">-0.4447961</td>
+<td class="gt_row gt_right">-0.5488097</td>
+<td class="gt_row gt_right">-0.5240857</td>
+<td class="gt_row gt_right">-0.6413929</td>
+<td class="gt_row gt_right">-0.3838825</td>
+<td class="gt_row gt_right">-0.4548953</td></tr>
+    <tr><td class="gt_row gt_center">(346,374]</td>
+<td class="gt_row gt_right">-0.6143376</td>
+<td class="gt_row gt_right">-0.7358740</td>
+<td class="gt_row gt_right">-0.4130536</td>
+<td class="gt_row gt_right">-0.5241838</td>
+<td class="gt_row gt_right">-0.6997354</td>
+<td class="gt_row gt_right">-0.7471606</td>
+<td class="gt_row gt_right">-0.4302209</td>
+<td class="gt_row gt_right">-0.5488097</td>
+<td class="gt_row gt_right">-0.5235414</td>
+<td class="gt_row gt_right">-0.6413929</td>
+<td class="gt_row gt_right">-0.3494335</td>
+<td class="gt_row gt_right">-0.4548953</td></tr>
+    <tr><td class="gt_row gt_center">(374,401]</td>
+<td class="gt_row gt_right">-0.6153168</td>
+<td class="gt_row gt_right">-0.7358740</td>
+<td class="gt_row gt_right">-0.2798743</td>
+<td class="gt_row gt_right">-0.5241838</td>
+<td class="gt_row gt_right">-0.6918155</td>
+<td class="gt_row gt_right">-0.7471606</td>
+<td class="gt_row gt_right">-0.3175588</td>
+<td class="gt_row gt_right">-0.5488097</td>
+<td class="gt_row gt_right">-0.5139592</td>
+<td class="gt_row gt_right">-0.6413929</td>
+<td class="gt_row gt_right">-0.2000933</td>
+<td class="gt_row gt_right">-0.4548953</td></tr>
+    <tr><td class="gt_row gt_center">(401,429]</td>
+<td class="gt_row gt_right">-0.5588552</td>
+<td class="gt_row gt_right">-0.7257664</td>
+<td class="gt_row gt_right">-0.2454227</td>
+<td class="gt_row gt_right">-0.5057380</td>
+<td class="gt_row gt_right">-0.6420489</td>
+<td class="gt_row gt_right">-0.7066628</td>
+<td class="gt_row gt_right">-0.2220980</td>
+<td class="gt_row gt_right">-0.5290581</td>
+<td class="gt_row gt_right">-0.3092052</td>
+<td class="gt_row gt_right">-0.5996349</td>
+<td class="gt_row gt_right">-0.2738338</td>
+<td class="gt_row gt_right">-0.2989322</td></tr>
+    <tr><td class="gt_row gt_center">(429,457]</td>
+<td class="gt_row gt_right">-0.3911900</td>
+<td class="gt_row gt_right">-0.7231043</td>
+<td class="gt_row gt_right">-0.3604044</td>
+<td class="gt_row gt_right">-0.3592013</td>
+<td class="gt_row gt_right">-0.6024730</td>
+<td class="gt_row gt_right">-0.7471606</td>
+<td class="gt_row gt_right">-0.3914326</td>
+<td class="gt_row gt_right">-0.4940928</td>
+<td class="gt_row gt_right">-0.3081478</td>
+<td class="gt_row gt_right">-0.6159644</td>
+<td class="gt_row gt_right">-0.3532748</td>
+<td class="gt_row gt_right">-0.3102731</td></tr>
+    <tr><td class="gt_row gt_center">(457,485]</td>
+<td class="gt_row gt_right">-0.3820636</td>
+<td class="gt_row gt_right">-0.6784728</td>
+<td class="gt_row gt_right">-0.3283021</td>
+<td class="gt_row gt_right">-0.4087074</td>
+<td class="gt_row gt_right">-0.4100401</td>
+<td class="gt_row gt_right">-0.7106287</td>
+<td class="gt_row gt_right">-0.3551391</td>
+<td class="gt_row gt_right">-0.4118556</td>
+<td class="gt_row gt_right">-0.3839255</td>
+<td class="gt_row gt_right">-0.5799746</td>
+<td class="gt_row gt_right">-0.3124918</td>
+<td class="gt_row gt_right">-0.3954276</td></tr>
+  </tbody>
+  
+  
+</table></div>
+</div>
+<p>Vamos a probar ahora con varios números de clusters para ver posteriormente según la regla del codo cual es el que mejor se adapta a nuestro juego de datos. También almacenamos en el tibble la información extraida a partir de las funciones del paquete <code>broom</code> <code>tidy()</code>, <code>augment()</code> y <code>glance()</code>:</p>
+<pre class="r"><code>kclusts &lt;- tibble(k = 1:9) %&gt;%
+  mutate(
+    kclust = map(k, ~kmeans(select(earn_tidy, -median_weekly), .x)),
+    tidied = map(kclust, tidy),
+    glanced = map(kclust, glance),
+    augmented = map(kclust, augment, select(earn_tidy, -median_weekly))
+  )
+
+kclusts</code></pre>
+<pre><code>## # A tibble: 9 x 5
+##       k kclust   tidied            glanced          augmented         
+##   &lt;int&gt; &lt;list&gt;   &lt;list&gt;            &lt;list&gt;           &lt;list&gt;            
+## 1     1 &lt;kmeans&gt; &lt;tibble [1 x 15]&gt; &lt;tibble [1 x 4]&gt; &lt;tibble [48 x 13]&gt;
+## 2     2 &lt;kmeans&gt; &lt;tibble [2 x 15]&gt; &lt;tibble [1 x 4]&gt; &lt;tibble [48 x 13]&gt;
+## 3     3 &lt;kmeans&gt; &lt;tibble [3 x 15]&gt; &lt;tibble [1 x 4]&gt; &lt;tibble [48 x 13]&gt;
+## 4     4 &lt;kmeans&gt; &lt;tibble [4 x 15]&gt; &lt;tibble [1 x 4]&gt; &lt;tibble [48 x 13]&gt;
+## 5     5 &lt;kmeans&gt; &lt;tibble [5 x 15]&gt; &lt;tibble [1 x 4]&gt; &lt;tibble [48 x 13]&gt;
+## 6     6 &lt;kmeans&gt; &lt;tibble [6 x 15]&gt; &lt;tibble [1 x 4]&gt; &lt;tibble [48 x 13]&gt;
+## 7     7 &lt;kmeans&gt; &lt;tibble [7 x 15]&gt; &lt;tibble [1 x 4]&gt; &lt;tibble [48 x 13]&gt;
+## 8     8 &lt;kmeans&gt; &lt;tibble [8 x 15]&gt; &lt;tibble [1 x 4]&gt; &lt;tibble [48 x 13]&gt;
+## 9     9 &lt;kmeans&gt; &lt;tibble [9 x 15]&gt; &lt;tibble [1 x 4]&gt; &lt;tibble [48 x 13]&gt;</code></pre>
+<pre class="r"><code>clusters &lt;- kclusts %&gt;%
+  unnest(cols = c(tidied))
+
+clusters %&gt;%
+  select(-c(kclust, glanced, augmented)) %&gt;%
+  head() %&gt;%
+  gt() %&gt;%
+  tab_header(title = md(&quot;Información a nivel Cluster&quot;)) %&gt;%
+  opt_align_table_header(align = &quot;left&quot;)</code></pre>
+<div id="cjcfpkkcvj" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#cjcfpkkcvj .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#cjcfpkkcvj .gt_heading {
+  background-color: #FFFFFF;
+  text-align: left;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#cjcfpkkcvj .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#cjcfpkkcvj .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 4px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#cjcfpkkcvj .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#cjcfpkkcvj .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#cjcfpkkcvj .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#cjcfpkkcvj .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#cjcfpkkcvj .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#cjcfpkkcvj .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#cjcfpkkcvj .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#cjcfpkkcvj .gt_group_heading {
+  padding: 8px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#cjcfpkkcvj .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#cjcfpkkcvj .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#cjcfpkkcvj .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#cjcfpkkcvj .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#cjcfpkkcvj .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 12px;
+}
+
+#cjcfpkkcvj .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#cjcfpkkcvj .gt_first_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+}
+
+#cjcfpkkcvj .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#cjcfpkkcvj .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#cjcfpkkcvj .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#cjcfpkkcvj .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#cjcfpkkcvj .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#cjcfpkkcvj .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding: 4px;
+}
+
+#cjcfpkkcvj .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#cjcfpkkcvj .gt_sourcenote {
+  font-size: 90%;
+  padding: 4px;
+}
+
+#cjcfpkkcvj .gt_left {
+  text-align: left;
+}
+
+#cjcfpkkcvj .gt_center {
+  text-align: center;
+}
+
+#cjcfpkkcvj .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#cjcfpkkcvj .gt_font_normal {
+  font-weight: normal;
+}
+
+#cjcfpkkcvj .gt_font_bold {
+  font-weight: bold;
+}
+
+#cjcfpkkcvj .gt_font_italic {
+  font-style: italic;
+}
+
+#cjcfpkkcvj .gt_super {
+  font-size: 65%;
+}
+
+#cjcfpkkcvj .gt_footnote_marks {
+  font-style: italic;
+  font-weight: normal;
+  font-size: 65%;
+}
+</style>
+<div class="table-container"><table class="gt_table">
+  <thead class="gt_header">
+    <tr>
+      <th colspan="16" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>Información a nivel Cluster</th>
+    </tr>
+    
+  </thead>
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">k</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">both_sexes_all_races</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">both_sexes_asian</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">both_sexes_black_or_african_american</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">both_sexes_white</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">men_all_races</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">men_asian</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">men_black_or_african_american</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">men_white</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">women_all_races</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">women_asian</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">women_black_or_african_american</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">women_white</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">size</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">withinss</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">cluster</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td class="gt_row gt_right">1</td>
+<td class="gt_row gt_right">-1.942890e-16</td>
+<td class="gt_row gt_right">1.341519e-16</td>
+<td class="gt_row gt_right">-1.318390e-16</td>
+<td class="gt_row gt_right">1.526557e-16</td>
+<td class="gt_row gt_right">6.013708e-17</td>
+<td class="gt_row gt_right">-4.625929e-18</td>
+<td class="gt_row gt_right">-7.170190e-17</td>
+<td class="gt_row gt_right">-4.163336e-17</td>
+<td class="gt_row gt_right">-1.341519e-16</td>
+<td class="gt_row gt_right">-5.088522e-17</td>
+<td class="gt_row gt_right">-8.095376e-17</td>
+<td class="gt_row gt_right">-2.312965e-18</td>
+<td class="gt_row gt_right">48</td>
+<td class="gt_row gt_right">564.00000</td>
+<td class="gt_row gt_center">1</td></tr>
+    <tr><td class="gt_row gt_right">2</td>
+<td class="gt_row gt_right">1.600183e+00</td>
+<td class="gt_row gt_right">6.506960e-01</td>
+<td class="gt_row gt_right">2.481229e-01</td>
+<td class="gt_row gt_right">1.528896e+00</td>
+<td class="gt_row gt_right">1.300192e+00</td>
+<td class="gt_row gt_right">-3.331271e-01</td>
+<td class="gt_row gt_right">6.515315e-01</td>
+<td class="gt_row gt_right">1.042955e+00</td>
+<td class="gt_row gt_right">1.179014e+00</td>
+<td class="gt_row gt_right">1.554440e+00</td>
+<td class="gt_row gt_right">-8.685529e-02</td>
+<td class="gt_row gt_right">1.352008e+00</td>
+<td class="gt_row gt_right">11</td>
+<td class="gt_row gt_right">152.80020</td>
+<td class="gt_row gt_center">1</td></tr>
+    <tr><td class="gt_row gt_right">2</td>
+<td class="gt_row gt_right">-4.757302e-01</td>
+<td class="gt_row gt_right">-1.934502e-01</td>
+<td class="gt_row gt_right">-7.376628e-02</td>
+<td class="gt_row gt_right">-4.545365e-01</td>
+<td class="gt_row gt_right">-3.865435e-01</td>
+<td class="gt_row gt_right">9.903778e-02</td>
+<td class="gt_row gt_right">-1.936986e-01</td>
+<td class="gt_row gt_right">-3.100677e-01</td>
+<td class="gt_row gt_right">-3.505178e-01</td>
+<td class="gt_row gt_right">-4.621308e-01</td>
+<td class="gt_row gt_right">2.582184e-02</td>
+<td class="gt_row gt_right">-4.019485e-01</td>
+<td class="gt_row gt_right">37</td>
+<td class="gt_row gt_right">206.58368</td>
+<td class="gt_row gt_center">2</td></tr>
+    <tr><td class="gt_row gt_right">3</td>
+<td class="gt_row gt_right">-5.403236e-01</td>
+<td class="gt_row gt_right">-2.030171e-01</td>
+<td class="gt_row gt_right">-4.056519e-01</td>
+<td class="gt_row gt_right">-4.681343e-01</td>
+<td class="gt_row gt_right">-4.641289e-01</td>
+<td class="gt_row gt_right">1.703212e-01</td>
+<td class="gt_row gt_right">-4.226642e-01</td>
+<td class="gt_row gt_right">-3.422328e-01</td>
+<td class="gt_row gt_right">-4.659789e-01</td>
+<td class="gt_row gt_right">-4.784179e-01</td>
+<td class="gt_row gt_right">-3.283122e-01</td>
+<td class="gt_row gt_right">-4.348218e-01</td>
+<td class="gt_row gt_right">32</td>
+<td class="gt_row gt_right">74.76960</td>
+<td class="gt_row gt_center">1</td></tr>
+    <tr><td class="gt_row gt_right">3</td>
+<td class="gt_row gt_right">1.480325e+00</td>
+<td class="gt_row gt_right">1.449279e+00</td>
+<td class="gt_row gt_right">-3.388036e-01</td>
+<td class="gt_row gt_right">1.718017e+00</td>
+<td class="gt_row gt_right">1.954988e+00</td>
+<td class="gt_row gt_right">1.406176e-02</td>
+<td class="gt_row gt_right">-1.427913e-01</td>
+<td class="gt_row gt_right">1.896780e+00</td>
+<td class="gt_row gt_right">2.163881e-01</td>
+<td class="gt_row gt_right">1.683366e+00</td>
+<td class="gt_row gt_right">-3.726753e-01</td>
+<td class="gt_row gt_right">4.391135e-01</td>
+<td class="gt_row gt_right">8</td>
+<td class="gt_row gt_right">51.93364</td>
+<td class="gt_row gt_center">2</td></tr>
+    <tr><td class="gt_row gt_right">3</td>
+<td class="gt_row gt_right">6.809700e-01</td>
+<td class="gt_row gt_right">-6.372106e-01</td>
+<td class="gt_row gt_right">1.961411e+00</td>
+<td class="gt_row gt_right">1.545201e-01</td>
+<td class="gt_row gt_right">-9.847259e-02</td>
+<td class="gt_row gt_right">-6.953466e-01</td>
+<td class="gt_row gt_right">1.833448e+00</td>
+<td class="gt_row gt_right">-5.278487e-01</td>
+<td class="gt_row gt_right">1.647527e+00</td>
+<td class="gt_row gt_right">2.303054e-01</td>
+<td class="gt_row gt_right">1.685924e+00</td>
+<td class="gt_row gt_right">1.300174e+00</td>
+<td class="gt_row gt_right">8</td>
+<td class="gt_row gt_right">99.81834</td>
+<td class="gt_row gt_center">3</td></tr>
+  </tbody>
+  
+  
+</table></div>
+</div>
+<pre class="r"><code>assignments &lt;- kclusts %&gt;% 
+  unnest(cols = c(augmented))
+
+assignments %&gt;%
+  select(-c(kclust, tidied, glanced)) %&gt;%
+  head() %&gt;%
+  gt() %&gt;%
+  tab_header(title = md(&quot;Dataset con Cluster Asignado&quot;)) %&gt;%
+  opt_align_table_header(align = &quot;left&quot;)</code></pre>
+<div id="poptfydshj" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#poptfydshj .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#poptfydshj .gt_heading {
+  background-color: #FFFFFF;
+  text-align: left;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#poptfydshj .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#poptfydshj .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 4px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#poptfydshj .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#poptfydshj .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#poptfydshj .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#poptfydshj .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#poptfydshj .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#poptfydshj .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#poptfydshj .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#poptfydshj .gt_group_heading {
+  padding: 8px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#poptfydshj .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#poptfydshj .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#poptfydshj .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#poptfydshj .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#poptfydshj .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 12px;
+}
+
+#poptfydshj .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#poptfydshj .gt_first_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+}
+
+#poptfydshj .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#poptfydshj .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#poptfydshj .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#poptfydshj .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#poptfydshj .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#poptfydshj .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding: 4px;
+}
+
+#poptfydshj .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#poptfydshj .gt_sourcenote {
+  font-size: 90%;
+  padding: 4px;
+}
+
+#poptfydshj .gt_left {
+  text-align: left;
+}
+
+#poptfydshj .gt_center {
+  text-align: center;
+}
+
+#poptfydshj .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#poptfydshj .gt_font_normal {
+  font-weight: normal;
+}
+
+#poptfydshj .gt_font_bold {
+  font-weight: bold;
+}
+
+#poptfydshj .gt_font_italic {
+  font-style: italic;
+}
+
+#poptfydshj .gt_super {
+  font-size: 65%;
+}
+
+#poptfydshj .gt_footnote_marks {
+  font-style: italic;
+  font-weight: normal;
+  font-size: 65%;
+}
+</style>
+<div class="table-container"><table class="gt_table">
+  <thead class="gt_header">
+    <tr>
+      <th colspan="14" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>Dataset con Cluster Asignado</th>
+    </tr>
+    
+  </thead>
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">k</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">both_sexes_all_races</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">both_sexes_asian</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">both_sexes_black_or_african_american</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">both_sexes_white</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">men_all_races</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">men_asian</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">men_black_or_african_american</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">men_white</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">women_all_races</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">women_asian</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">women_black_or_african_american</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">women_white</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">.cluster</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td class="gt_row gt_right">1</td>
+<td class="gt_row gt_right">-0.6366053</td>
+<td class="gt_row gt_right">-0.7358740</td>
+<td class="gt_row gt_right">-0.4260281</td>
+<td class="gt_row gt_right">-0.5241838</td>
+<td class="gt_row gt_right">-0.7140515</td>
+<td class="gt_row gt_right">-0.7471606</td>
+<td class="gt_row gt_right">-0.4447961</td>
+<td class="gt_row gt_right">-0.5488097</td>
+<td class="gt_row gt_right">-0.5240857</td>
+<td class="gt_row gt_right">-0.6413929</td>
+<td class="gt_row gt_right">-0.3838825</td>
+<td class="gt_row gt_right">-0.4548953</td>
+<td class="gt_row gt_center">1</td></tr>
+    <tr><td class="gt_row gt_right">1</td>
+<td class="gt_row gt_right">-0.6143376</td>
+<td class="gt_row gt_right">-0.7358740</td>
+<td class="gt_row gt_right">-0.4130536</td>
+<td class="gt_row gt_right">-0.5241838</td>
+<td class="gt_row gt_right">-0.6997354</td>
+<td class="gt_row gt_right">-0.7471606</td>
+<td class="gt_row gt_right">-0.4302209</td>
+<td class="gt_row gt_right">-0.5488097</td>
+<td class="gt_row gt_right">-0.5235414</td>
+<td class="gt_row gt_right">-0.6413929</td>
+<td class="gt_row gt_right">-0.3494335</td>
+<td class="gt_row gt_right">-0.4548953</td>
+<td class="gt_row gt_center">1</td></tr>
+    <tr><td class="gt_row gt_right">1</td>
+<td class="gt_row gt_right">-0.6153168</td>
+<td class="gt_row gt_right">-0.7358740</td>
+<td class="gt_row gt_right">-0.2798743</td>
+<td class="gt_row gt_right">-0.5241838</td>
+<td class="gt_row gt_right">-0.6918155</td>
+<td class="gt_row gt_right">-0.7471606</td>
+<td class="gt_row gt_right">-0.3175588</td>
+<td class="gt_row gt_right">-0.5488097</td>
+<td class="gt_row gt_right">-0.5139592</td>
+<td class="gt_row gt_right">-0.6413929</td>
+<td class="gt_row gt_right">-0.2000933</td>
+<td class="gt_row gt_right">-0.4548953</td>
+<td class="gt_row gt_center">1</td></tr>
+    <tr><td class="gt_row gt_right">1</td>
+<td class="gt_row gt_right">-0.5588552</td>
+<td class="gt_row gt_right">-0.7257664</td>
+<td class="gt_row gt_right">-0.2454227</td>
+<td class="gt_row gt_right">-0.5057380</td>
+<td class="gt_row gt_right">-0.6420489</td>
+<td class="gt_row gt_right">-0.7066628</td>
+<td class="gt_row gt_right">-0.2220980</td>
+<td class="gt_row gt_right">-0.5290581</td>
+<td class="gt_row gt_right">-0.3092052</td>
+<td class="gt_row gt_right">-0.5996349</td>
+<td class="gt_row gt_right">-0.2738338</td>
+<td class="gt_row gt_right">-0.2989322</td>
+<td class="gt_row gt_center">1</td></tr>
+    <tr><td class="gt_row gt_right">1</td>
+<td class="gt_row gt_right">-0.3911900</td>
+<td class="gt_row gt_right">-0.7231043</td>
+<td class="gt_row gt_right">-0.3604044</td>
+<td class="gt_row gt_right">-0.3592013</td>
+<td class="gt_row gt_right">-0.6024730</td>
+<td class="gt_row gt_right">-0.7471606</td>
+<td class="gt_row gt_right">-0.3914326</td>
+<td class="gt_row gt_right">-0.4940928</td>
+<td class="gt_row gt_right">-0.3081478</td>
+<td class="gt_row gt_right">-0.6159644</td>
+<td class="gt_row gt_right">-0.3532748</td>
+<td class="gt_row gt_right">-0.3102731</td>
+<td class="gt_row gt_center">1</td></tr>
+    <tr><td class="gt_row gt_right">1</td>
+<td class="gt_row gt_right">-0.3820636</td>
+<td class="gt_row gt_right">-0.6784728</td>
+<td class="gt_row gt_right">-0.3283021</td>
+<td class="gt_row gt_right">-0.4087074</td>
+<td class="gt_row gt_right">-0.4100401</td>
+<td class="gt_row gt_right">-0.7106287</td>
+<td class="gt_row gt_right">-0.3551391</td>
+<td class="gt_row gt_right">-0.4118556</td>
+<td class="gt_row gt_right">-0.3839255</td>
+<td class="gt_row gt_right">-0.5799746</td>
+<td class="gt_row gt_right">-0.3124918</td>
+<td class="gt_row gt_right">-0.3954276</td>
+<td class="gt_row gt_center">1</td></tr>
+  </tbody>
+  
+  
+</table></div>
+</div>
+<pre class="r"><code>clusterings &lt;- kclusts %&gt;%
+  unnest(cols = c(glanced))
+
+clusterings %&gt;%
+  select(-c(kclust, tidied, augmented)) %&gt;%
+  gt() %&gt;%
+  tab_header(title = md(&quot;Información a nivel k&quot;))</code></pre>
+<div id="xkvjdydmtf" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#xkvjdydmtf .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#xkvjdydmtf .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#xkvjdydmtf .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#xkvjdydmtf .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 4px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#xkvjdydmtf .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xkvjdydmtf .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#xkvjdydmtf .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#xkvjdydmtf .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#xkvjdydmtf .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#xkvjdydmtf .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#xkvjdydmtf .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#xkvjdydmtf .gt_group_heading {
+  padding: 8px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#xkvjdydmtf .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#xkvjdydmtf .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#xkvjdydmtf .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#xkvjdydmtf .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#xkvjdydmtf .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 12px;
+}
+
+#xkvjdydmtf .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xkvjdydmtf .gt_first_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+}
+
+#xkvjdydmtf .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xkvjdydmtf .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#xkvjdydmtf .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#xkvjdydmtf .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xkvjdydmtf .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#xkvjdydmtf .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding: 4px;
+}
+
+#xkvjdydmtf .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#xkvjdydmtf .gt_sourcenote {
+  font-size: 90%;
+  padding: 4px;
+}
+
+#xkvjdydmtf .gt_left {
+  text-align: left;
+}
+
+#xkvjdydmtf .gt_center {
+  text-align: center;
+}
+
+#xkvjdydmtf .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#xkvjdydmtf .gt_font_normal {
+  font-weight: normal;
+}
+
+#xkvjdydmtf .gt_font_bold {
+  font-weight: bold;
+}
+
+#xkvjdydmtf .gt_font_italic {
+  font-style: italic;
+}
+
+#xkvjdydmtf .gt_super {
+  font-size: 65%;
+}
+
+#xkvjdydmtf .gt_footnote_marks {
+  font-style: italic;
+  font-weight: normal;
+  font-size: 65%;
+}
+</style>
+<div class="table-container"><table class="gt_table">
+  <thead class="gt_header">
+    <tr>
+      <th colspan="5" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>Información a nivel k</th>
+    </tr>
+    
+  </thead>
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">k</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">totss</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">tot.withinss</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">betweenss</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">iter</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td class="gt_row gt_right">1</td>
+<td class="gt_row gt_right">564</td>
+<td class="gt_row gt_right">564.00000</td>
+<td class="gt_row gt_right">-2.273737e-13</td>
+<td class="gt_row gt_right">1</td></tr>
+    <tr><td class="gt_row gt_right">2</td>
+<td class="gt_row gt_right">564</td>
+<td class="gt_row gt_right">359.38388</td>
+<td class="gt_row gt_right">2.046161e+02</td>
+<td class="gt_row gt_right">1</td></tr>
+    <tr><td class="gt_row gt_right">3</td>
+<td class="gt_row gt_right">564</td>
+<td class="gt_row gt_right">226.52158</td>
+<td class="gt_row gt_right">3.374784e+02</td>
+<td class="gt_row gt_right">4</td></tr>
+    <tr><td class="gt_row gt_right">4</td>
+<td class="gt_row gt_right">564</td>
+<td class="gt_row gt_right">162.27237</td>
+<td class="gt_row gt_right">4.017276e+02</td>
+<td class="gt_row gt_right">2</td></tr>
+    <tr><td class="gt_row gt_right">5</td>
+<td class="gt_row gt_right">564</td>
+<td class="gt_row gt_right">156.91371</td>
+<td class="gt_row gt_right">4.070863e+02</td>
+<td class="gt_row gt_right">2</td></tr>
+    <tr><td class="gt_row gt_right">6</td>
+<td class="gt_row gt_right">564</td>
+<td class="gt_row gt_right">94.55150</td>
+<td class="gt_row gt_right">4.694485e+02</td>
+<td class="gt_row gt_right">3</td></tr>
+    <tr><td class="gt_row gt_right">7</td>
+<td class="gt_row gt_right">564</td>
+<td class="gt_row gt_right">91.80825</td>
+<td class="gt_row gt_right">4.721918e+02</td>
+<td class="gt_row gt_right">2</td></tr>
+    <tr><td class="gt_row gt_right">8</td>
+<td class="gt_row gt_right">564</td>
+<td class="gt_row gt_right">67.45387</td>
+<td class="gt_row gt_right">4.965461e+02</td>
+<td class="gt_row gt_right">3</td></tr>
+    <tr><td class="gt_row gt_right">9</td>
+<td class="gt_row gt_right">564</td>
+<td class="gt_row gt_right">66.24671</td>
+<td class="gt_row gt_right">4.977533e+02</td>
+<td class="gt_row gt_right">2</td></tr>
+  </tbody>
+  
+  
+</table></div>
+</div>
+<p>Vamos a explorar alguno de los resultados a continuación:</p>
+<pre class="r"><code>p1 &lt;- ggplot(assignments, aes(x = women_all_races, y = women_asian)) +
+  geom_point(aes(color = .cluster), alpha = 0.8) + 
+  facet_wrap(~ k) +
+  tidyquant::theme_tq() +
+  theme(legend.position = &quot;right&quot;)
+
+p1 + geom_point(data = clusters, size = 6, shape = &quot;x&quot;)</code></pre>
+<p><img src="/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p>Podemos crear una función para explorar las combinaciones que nos interesen de manera más cómoda:</p>
+<pre class="r"><code>explore_kmeans_results &lt;- function(.assignments, .clusters,  .var1, .var2){
+  
+  p1 &lt;- ggplot(.assignments, aes(x = {{.var1}}, y = {{.var2}})) +
+  geom_point(aes(color = .cluster), alpha = 0.8) + 
+  facet_wrap(~ k) +
+  tidyquant::theme_tq() +
+  theme(legend.position = &quot;right&quot;)
+
+  p1 + geom_point(data = .clusters, size = 6, shape = &quot;x&quot;)
+  
+}
+
+explore_kmeans_results(assignments, clusters, men_all_races, men_asian)</code></pre>
+<p><img src="/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<p>También podemos ver cual es el número adecuado de clusters para este dataset utilizando la famosa regla del codo. Para ello necesitamos representar la varianza intraclusters por cada valor de k:</p>
+<pre class="r"><code>ggplot(clusterings, aes(k, tot.withinss)) +
+  geom_line() +
+  geom_point() +
+  tidyquant::theme_tq() +
+  ggtitle(&quot;Número Óptimo de Clusters&quot;)</code></pre>
+<p><img src="/posts/2021-08-19-kmeans-tidymodels/kmeans.es_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<p>A pesar de que en ningún momento tenemos la forma característica del codo en mi opinión posiblemente el número más óptimo de clusters en este caso sea cinco.</p>
+</div>
+<div id="fuentes" class="section level2">
+<h2>Fuentes 📚</h2>
+<ul class="task-list">
+<li><p><input type="checkbox" disabled="" checked="" />
+<a href="https://juliasilge.com/blog/kmeans-employment/" target="_blank" rel="noopener">Getting started with k-means and #TidyTuesday employment status</a></p></li>
+<li><p><input type="checkbox" disabled="" checked="" />
+<a href="https://www.tidymodels.org/learn/statistics/k-means/" target="_blank" rel="noopener">K-means clustering with tidy data principles</a></p></li>
+</ul>
+</div>
+<div id="contacto" class="section level2">
+<h2>Contacto ✉</h2>
+<p>Alberto Almuiña, <a href="https://www.linkedin.com/in/alberto-almui%C3%B1a-b1176881/" target="_blank" rel="noopener">Linkedin</a>, <a href="https://twitter.com/AlmuinaAlberto" target="_blank" rel="noopener">Twitter</a>, <a href="https://github.com/AlbertoAlmuinha" target="_blank" rel="noopener">Github</a>, <a href="https://albertoalmuinha.com/es/" target="_blank" rel="noopener">Blog</a>.</p>
+</div>
+
+            </div>
+
+            
+    
+    
+        <ul class="post-copyright">
+            <li class="copyright-item author"><span class="copyright-item-text">Author</span>: <a href="https://albertoalmuinha.com/" class="p-author h-card" target="_blank" rel="noopener">Alberto Almuiña</a></li>
+            
+                
+                
+                
+                
+                <li class="copyright-item link"><span class="copyright-item-text">Link</span>: <a href="/es/posts/2021-08-19-kmeans-tidymodels/kmeans-es/" target="_blank" rel="noopener">https://AlbertoAlmui%C3%B1a.com/es/es/posts/2021-08-19-kmeans-tidymodels/kmeans-es/</a></li>
+            
+            <li class="copyright-item license"><span class="copyright-item-text">License</span>: <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></li>
+            
+        </ul>
+    
+
+
+
+        </article>
+
+        
+
+        
+    <div class="updated-badge-container">
+        <span title="Updated @ 2021-08-19 20:57:08 CEST" style="cursor:help">
+
+<svg xmlns="http://www.w3.org/2000/svg" width="130" height="20" class="updated-badge"><linearGradient id="b" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="a"><rect width="130" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#a)"><path class="updated-badge-left" d="M0 0h55v20H0z"/><path class="updated-badge-right" d="M55 0h75v20H55z"/><path fill="url(#b)" d="M0 0h130v20H0z"/></g><g fill="#fff" text-anchor="middle" font-size="110"><text x="285" y="150" fill="#010101" fill-opacity=".3" textLength="450" transform="scale(.1)">updated</text><text x="285" y="140" textLength="450" transform="scale(.1)">updated</text><text x="915" y="150" fill="#010101" fill-opacity=".3" textLength="650" transform="scale(.1)">2021-08-19</text><text x="915" y="140" textLength="650" transform="scale(.1)">2021-08-19</text></g></svg>
+        </span></div>
+
+
+
+        
+
+
+        <div class="post-share">
+
+        
+
+        <div class="share-items">
+
+            
+                <div class="share-item twitter">
+                    
+                    <a href="https://twitter.com/share?url=https://AlbertoAlmui%C3%B1a.com/es/posts/2021-08-19-kmeans-tidymodels/kmeans-es/&amp;text=Tidytuesday,%20KMeans%20y%20Tidymodels&amp;hashtags=kmeans,&amp;via=AlmuinaAlberto" title="Share on Twitter" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon twitter-icon"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item facebook">
+                    
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=https://AlbertoAlmui%C3%B1a.com/es/posts/2021-08-19-kmeans-tidymodels/kmeans-es/&amp;hashtag=%23kmeans" title="Share on Facebook" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon facebook-icon"><path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item linkedin">
+                    
+                    <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://AlbertoAlmui%C3%B1a.com/es/posts/2021-08-19-kmeans-tidymodels/kmeans-es/&amp;title=Tidytuesday,%20KMeans%20y%20Tidymodels&amp;summary=Una%20introducci%c3%b3n%20al%20uso%20de%20Kmeans%20con%20Tidymodels&amp;source=AlbertoAlmui%c3%b1a" title="Share on LinkedIn" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon linkedin-icon"><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item telegram">
+                    
+                    <a href="https://t.me/share/url?url=https://AlbertoAlmui%C3%B1a.com/es/posts/2021-08-19-kmeans-tidymodels/kmeans-es/&amp;text=Tidytuesday,%20KMeans%20y%20Tidymodels" title="Share on Telegram" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" class="icon telegram-icon"><path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm121.8 169.9l-40.7 191.8c-3 13.6-11.1 16.9-22.4 10.5l-62-45.7-29.9 28.8c-3.3 3.3-6.1 6.1-12.5 6.1l4.4-63.1 114.9-103.8c5-4.4-1.1-6.9-7.7-2.5l-142 89.4-61.2-19.1c-13.3-4.2-13.6-13.3 2.8-19.7l239.1-92.2c11.1-4 20.8 2.7 17.2 19.5z"/></svg></a>
+                </div>
+            
+
+            
+
+            
+
+            
+
+            
+
+            
+                <div class="share-item qrcode">
+                    <div class="qrcode-container" title="Share via QR Code"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon qrcode-icon"><path d="M0 224h192V32H0v192zM64 96h64v64H64V96zm192-64v192h192V32H256zm128 128h-64V96h64v64zM0 480h192V288H0v192zm64-128h64v64H64v-64zm352-64h32v128h-96v-32h-32v96h-64V288h96v32h64v-32zm0 160h32v32h-32v-32zm-64 0h32v32h-32v-32z"/></svg><div id="qrcode-img"></div>
+                    </div>
+                    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+
+<script>
+    var typeNumber = 0;
+    var errorCorrectionLevel = 'L';
+    var qr = qrcode(typeNumber, errorCorrectionLevel);
+    qr.addData('https:\/\/AlbertoAlmui%C3%B1a.com\/es\/posts\/2021-08-19-kmeans-tidymodels\/kmeans-es\/');
+    qr.make();
+    document.getElementById('qrcode-img').innerHTML = qr.createImgTag();
+</script>
+
+                </div>
+            
+
+        </div>
+
+    </div>
+
+
+
+
+        
+    
+    
+        <div class="related-posts">
+            <h2 class="related-title">See Also:<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon related-icon"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z"/></svg></h2>
+            <ul class="related-list">
+                
+                    <li class="related-item">
+                        <a href="/es/posts/2020-08-23-recipes/recipes_es/" class="related-link">Tidymodels: el paquete <code>recipes</code></a>
+                    </li>
+                
+            </ul>
+        </div>
+    
+
+
+
+        
+    
+        <div class="post-tags">
+            
+                
+                
+                
+                
+                    
+                    <a href="/es/tags/kmeans/" rel="tag" class="post-tags-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon tag-icon"><path d="M0 252.118V48C0 21.49 21.49 0 48 0h204.118a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882L293.823 497.941c-18.745 18.745-49.137 18.745-67.882 0L14.059 286.059A48 48 0 0 1 0 252.118zM112 64c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48z"/></svg>kmeans</a>
+                
+            
+        </div>
+    
+
+
+
+        
+
+
+        
+
+
+        
+    
+        
+        
+    
+    
+    
+    
+        <ul class="post-nav">
+            
+            
+                <li class="post-nav-next">
+                    <a href="/es/posts/2021-08-02-global-models/modelos-globales/" rel="next">Modelos Globales con Modeltime &gt;</a>
+                </li>
+            
+        </ul>
+    
+
+
+
+        
+    
+
+        <div class="load-comments">
+            <div id="load-comments">Load Comments?</div>
+        </div>
+
+        
+            <div id="disqus_thread"></div>
+        
+
+        
+
+        
+
+    
+
+
+
+    </div>
+</main>
+
+
+            
+    <div id="back-to-top" class="back-to-top">
+        <a href="#"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon arrow-up"><path d="M34.9 289.5l-22.2-22.2c-9.4-9.4-9.4-24.6 0-33.9L207 39c9.4-9.4 24.6-9.4 33.9 0l194.3 194.3c9.4 9.4 9.4 24.6 0 33.9L413 289.4c-9.5 9.5-25 9.3-34.3-.4L264 168.6V456c0 13.3-10.7 24-24 24h-32c-13.3 0-24-10.7-24-24V168.6L69.2 289.1c-9.3 9.8-24.8 10-34.3.4z"/></svg></a>
+    </div>
+
+
+            
+    <footer id="footer" class="footer">
+        <div class="footer-inner">
+            <div class="site-info">©&nbsp;2021–2021&nbsp;<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon footer-icon"><path d="M462.3 62.6C407.5 15.9 326 24.3 275.7 76.2L256 96.5l-19.7-20.3C186.1 24.3 104.5 15.9 49.7 62.6c-62.8 53.6-66.1 149.8-9.9 207.9l193.5 199.8c12.5 12.9 32.8 12.9 45.3 0l193.5-199.8c56.3-58.1 53-154.3-9.8-207.9z"/></svg>&nbsp;Alberto Almuiña</div><div class="powered-by">Powered by <a href="https://github.com/gohugoio/hugo" target="_blank" rel="noopener">Hugo</a> | Theme is <a href="https://github.com/reuixiy/hugo-theme-meme" target="_blank" rel="noopener">MemE</a></div><div class="site-copyright"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></div>
+
+            
+    
+        <ul class="socials"><li class="socials-item">
+                    <a href="/rss.xml" target="_blank" rel="external noopener" title="RSS"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon social-icon"><path d="M19.199 24C19.199 13.467 10.533 4.8 0 4.8V0c13.165 0 24 10.835 24 24h-4.801zM3.291 17.415c1.814 0 3.293 1.479 3.293 3.295 0 1.813-1.485 3.29-3.301 3.29C1.47 24 0 22.526 0 20.71s1.475-3.294 3.291-3.295zM15.909 24h-4.665c0-6.169-5.075-11.245-11.244-11.245V8.09c8.727 0 15.909 7.184 15.909 15.91z"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="mailto:albertogonzalezalmuinha@gmail.com" target="_blank" rel="external noopener" title="Email"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon social-icon"><path d="M464 64H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm0 48v40.805c-22.422 18.259-58.168 46.651-134.587 106.49-16.841 13.247-50.201 45.072-73.413 44.701-23.208.375-56.579-31.459-73.413-44.701C106.18 199.465 70.425 171.067 48 152.805V112h416zM48 400V214.398c22.914 18.251 55.409 43.862 104.938 82.646 21.857 17.205 60.134 55.186 103.062 54.955 42.717.231 80.509-37.199 103.053-54.947 49.528-38.783 82.032-64.401 104.947-82.653V400H48z"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="https://github.com/AlbertoAlmuinha" target="_blank" rel="external noopener" title="GitHub"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon social-icon"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="https://twitter.com/AlmuinaAlberto" target="_blank" rel="external noopener" title="Twitter"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon social-icon"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="https://www.linkedin.com/in/alberto-gonz%C3%A1lez-almui%C3%B1a-b1176881/" target="_blank" rel="external noopener" title="Linkedin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon social-icon"><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg></a>
+                </li></ul>
+    
+
+
+
+            
+        </div>
+    </footer>
+
+
+        </div>
+        
+
+        
+
+
+    <script>
+    if (typeof MathJax === 'undefined') {
+        window.MathJax = {
+            loader: {
+                load: ['[tex]/mhchem']
+            },
+            
+            tex: {
+                inlineMath: {'[+]': [['$', '$']]},
+                tags: 'ams',
+                packages: {'[+]': ['mhchem']}
+            }
+        };
+        (function() {
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.1.2/es5/tex-mml-chtml.js';
+            script.defer = true;
+            document.head.appendChild(script);
+        })();
+    } else {
+        MathJax.texReset();
+        MathJax.typeset();
+    }
+</script>
+
+
+
+
+
+
+    
+
+        
+            <script>
+    function loadComments() {
+        if (typeof DISQUS === 'undefined') {
+            var disqus_config = function() {
+                this.page.url = 'https:\/\/AlbertoAlmui%C3%B1a.com\/es\/posts\/2021-08-19-kmeans-tidymodels\/kmeans-es\/';
+                this.page.identifier = '\/es\/posts\/2021-08-19-kmeans-tidymodels\/kmeans-es\/';
+                this.page.title = 'Tidytuesday, KMeans y Tidymodels';
+            };
+            (function() {
+                var d = document, s = d.createElement('script'); s.async = true;
+                s.src = 'https://https-alberto-almuinha-netlify-app.disqus.com/embed.js';
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        } else {
+            DISQUS.reset({
+                reload: true,
+                config: function() {
+                    this.page.url = 'https:\/\/AlbertoAlmui%C3%B1a.com\/es\/posts\/2021-08-19-kmeans-tidymodels\/kmeans-es\/';
+                    this.page.identifier = '\/es\/posts\/2021-08-19-kmeans-tidymodels\/kmeans-es\/';
+                    this.page.title = 'Tidytuesday, KMeans y Tidymodels';
+                }
+            });
+        }
+    }
+</script>
+
+        
+
+        
+
+        
+
+    
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/medium-zoom@latest/dist/medium-zoom.min.js"></script>
+
+<script>
+    mediumZoom(document.querySelectorAll('div.post-body img'), {
+        background: 'hsla(var(--color-bg-h), var(--color-bg-s), var(--color-bg-l), 0.95)'
+    })
+</script>
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/instant.page@5.1.0/instantpage.min.js" type="module" defer></script>
+
+
+
+
+
+
+
+    </body>
+</html>

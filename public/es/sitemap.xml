@@ -3,7 +3,7 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://AlbertoAlmui%C3%B1a.com/es/</loc>
-    <lastmod>2021-08-03T20:53:21+02:00</lastmod>
+    <lastmod>2021-08-19T20:57:08+02:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="en"
@@ -16,7 +16,7 @@
                 />
   </url><url>
     <loc>https://AlbertoAlmui%C3%B1a.com/es/categories/</loc>
-    <lastmod>2021-08-03T20:53:21+02:00</lastmod>
+    <lastmod>2021-08-19T20:57:08+02:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="en"
@@ -28,34 +28,21 @@
                 href="https://AlbertoAlmui%C3%B1a.com/es/categories/"
                 />
   </url><url>
-    <loc>https://AlbertoAlmui%C3%B1a.com/es/posts/2021-08-02-global-models/modelos-globales/</loc>
-    <lastmod>2021-08-03T20:53:21+02:00</lastmod>
+    <loc>https://AlbertoAlmui%C3%B1a.com/es/tags/kmeans/</loc>
+    <lastmod>2021-08-19T20:57:08+02:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="en"
-                href="https://AlbertoAlmui%C3%B1a.com/posts/2021-08-02-global-models/global-models/"
+                href="https://AlbertoAlmui%C3%B1a.com/tags/kmeans/"
                 />
     <xhtml:link
                 rel="alternate"
                 hreflang="es"
-                href="https://AlbertoAlmui%C3%B1a.com/es/posts/2021-08-02-global-models/modelos-globales/"
-                />
-  </url><url>
-    <loc>https://AlbertoAlmui%C3%B1a.com/es/tags/modeltime/</loc>
-    <lastmod>2021-08-03T20:53:21+02:00</lastmod>
-    <xhtml:link
-                rel="alternate"
-                hreflang="en"
-                href="https://AlbertoAlmui%C3%B1a.com/tags/modeltime/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="es"
-                href="https://AlbertoAlmui%C3%B1a.com/es/tags/modeltime/"
+                href="https://AlbertoAlmui%C3%B1a.com/es/tags/kmeans/"
                 />
   </url><url>
     <loc>https://AlbertoAlmui%C3%B1a.com/es/posts/</loc>
-    <lastmod>2021-08-03T20:53:21+02:00</lastmod>
+    <lastmod>2021-08-19T20:57:08+02:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="en"
@@ -68,7 +55,7 @@
                 />
   </url><url>
     <loc>https://AlbertoAlmui%C3%B1a.com/es/tags/</loc>
-    <lastmod>2021-08-03T20:53:21+02:00</lastmod>
+    <lastmod>2021-08-19T20:57:08+02:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="en"
@@ -80,8 +67,60 @@
                 href="https://AlbertoAlmui%C3%B1a.com/es/tags/"
                 />
   </url><url>
+    <loc>https://AlbertoAlmui%C3%B1a.com/es/categories/tidymodels/</loc>
+    <lastmod>2021-08-19T20:57:08+02:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://AlbertoAlmui%C3%B1a.com/categories/tidymodels/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="es"
+                href="https://AlbertoAlmui%C3%B1a.com/es/categories/tidymodels/"
+                />
+  </url><url>
+    <loc>https://AlbertoAlmui%C3%B1a.com/es/posts/2021-08-19-kmeans-tidymodels/kmeans-es/</loc>
+    <lastmod>2021-08-19T20:57:08+02:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://AlbertoAlmui%C3%B1a.com/posts/2021-08-19-kmeans-tidymodels/kmeans/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="es"
+                href="https://AlbertoAlmui%C3%B1a.com/es/posts/2021-08-19-kmeans-tidymodels/kmeans-es/"
+                />
+  </url><url>
+    <loc>https://AlbertoAlmui%C3%B1a.com/es/posts/2021-08-02-global-models/modelos-globales/</loc>
+    <lastmod>2021-08-04T02:18:54+02:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://AlbertoAlmui%C3%B1a.com/posts/2021-08-02-global-models/global-models/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="es"
+                href="https://AlbertoAlmui%C3%B1a.com/es/posts/2021-08-02-global-models/modelos-globales/"
+                />
+  </url><url>
+    <loc>https://AlbertoAlmui%C3%B1a.com/es/tags/modeltime/</loc>
+    <lastmod>2021-08-04T02:18:54+02:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://AlbertoAlmui%C3%B1a.com/tags/modeltime/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="es"
+                href="https://AlbertoAlmui%C3%B1a.com/es/tags/modeltime/"
+                />
+  </url><url>
     <loc>https://AlbertoAlmui%C3%B1a.com/es/categories/time-series/</loc>
-    <lastmod>2021-08-03T20:53:21+02:00</lastmod>
+    <lastmod>2021-08-04T02:18:54+02:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="en"
@@ -460,19 +499,6 @@
                 rel="alternate"
                 hreflang="es"
                 href="https://AlbertoAlmui%C3%B1a.com/es/tags/recipes/"
-                />
-  </url><url>
-    <loc>https://AlbertoAlmui%C3%B1a.com/es/categories/tidymodels/</loc>
-    <lastmod>2021-06-19T04:58:58+02:00</lastmod>
-    <xhtml:link
-                rel="alternate"
-                hreflang="en"
-                href="https://AlbertoAlmui%C3%B1a.com/categories/tidymodels/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="es"
-                href="https://AlbertoAlmui%C3%B1a.com/es/categories/tidymodels/"
                 />
   </url><url>
     <loc>https://AlbertoAlmui%C3%B1a.com/es/posts/2020-08-23-recipes/recipes_es/</loc>

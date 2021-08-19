@@ -1,0 +1,288 @@
+---
+title: "Tidytuesday, KMeans and Tidymodels"
+author: "Alberto Almuiña"
+date: '2021-08-19T02:13:14-05:00'
+description: An introduction to using Kmeans with Tidymodels
+slug: kmeans
+tags:
+  - kmeans
+categories: 
+  - Tidymodels
+---
+
+
+## Economic Data Analysis: USA 📈 
+
+In this blog post we will analyze the data corresponding to week 9 of 2021 from `TidyTuesday` where we see the median weekly wages and the number of people employed by gender, race and age over time (specifically the period 2010-2020 is analyzed). We have two options to download the data: the first is to use the `tidytuesdayR` package passing as argument to the main function the week of the datasets we want to download, while the second option is to download the data directly from the link where they are hosted:
+
+```{r, warning=FALSE, message=FALSE}
+library(tidytuesdayR)
+library(tidyverse)
+library(broom)
+library(gt)
+
+#Option 1
+tidyweek <- '2021-02-23'
+tuesdata <- tidytuesdayR::tt_load(tidyweek)
+earn <- tuesdata$earn
+
+#Option 2
+earn <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-23/earn.csv')
+
+earn %>% 
+  head() %>%
+  gt() %>%
+  tab_header(title = md("Datos de Salarios Medianos en EEUU"))
+```
+
+We are going to use the `skimr` package for a first approach to the dataset. Through the `skim()` function we will obtain very useful information about the variables divided by their type:
+
+```{r}
+skimr::skim(earn)
+```
+
+We can observe that the variables `sex`, `race` and `ethnic_origin` have a limited number of levels (single values) while the variable `age` is divided into more levels (12). It can also be observed that the variable number of people hired has a high variability, which gives us a clue that we will most likely have to treat this variable if we want to use it effectively. Let's quickly check what the values of the categorical variables are:
+
+```{r}
+earn %>%
+  select_if(is_character) %>%
+  map(unique)
+```
+
+What we observe is that the values for age overlap, so it does not seem clear what logic the levels follow in this variable. In the next section on data visualization we will go deeper into this variable to see how these values are distributed according to the other variables.
+
+## Data Visualization 🔎📊
+
+Let's look at how age varies by sex and race to see if we can see that different non-overlapping scales are being used for different levels of other variables. Let's check it out:
+
+```{r, message=FALSE}
+earn %>%
+  filter(sex != "Both Sexes") %>%
+  ggplot(aes(race, age, color = sex)) +
+  geom_count() +
+  facet_wrap(~sex) +
+  coord_flip() +
+  tidyquant::theme_tq() + 
+  ylab(NULL) +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "right") 
+
+```
+
+Unfortunately, we see that the levels still overlap for the levels of the `race` and `sex` variables, so this variable will not be very useful to us.
+
+Next we will analyze how the median weekly wage varies as a function of sex and race:
+
+```{r, message=FALSE}
+earn %>%
+  filter(sex != "Both Sexes") %>%
+  ggplot(aes(median_weekly_earn, fill = sex)) +
+  geom_histogram(color = "black") +
+  scale_fill_manual(values = c("#FFB612", "#97233F")) +
+  tidyquant::theme_tq() +
+  facet_wrap(~race, nrow = 2, scales = "free") +
+  theme(legend.position = "right")
+```
+
+Here we already have the first interesting conclusions: We can see how men get paid more than women regardless of race (as can be seen by growing the red bars in the last sections of the distributions with respect to the blue ones). It is also interesting to see how black or African people have lower ranges than the other races (their maximum is around 900, while the maximum for whites is above 1250 and for Asians above 1500). It is also interesting to see how the intermediate zone of the distribution is mostly female in all races while in the first values we see a greater balance between sexes.
+
+```{r, message=FALSE, warning=FALSE}
+earn %>%
+  filter(sex != "Both Sexes") %>%
+  ggplot(aes(median_weekly_earn, fill = sex)) +
+  geom_histogram(color = "black", position = "dodge") +
+  tidyquant::theme_tq() +
+  scale_fill_manual(values = c("#FFB612", "#97233F")) +
+  scale_x_continuous(limits = c(300, 1800)) +
+  facet_wrap(~ethnic_origin, nrow = 2, scales = "free") +
+  theme(legend.position = "right")
+```
+
+The same pattern is observed as we saw in the previous graph, where we see how men are generally paid more than women. We can also see how Hispanics have lower than average salaries (both men and women) as can be seen in the ranges that the distributions reach (the maximum value for Hispanics does not reach the median of $900 per week).
+
+
+```{r, warning=FALSE, message=FALSE}
+earn %>%
+  filter(sex != "Both Sexes") %>%
+  filter(ethnic_origin == "All Origins" & !is.na(age)) %>%
+  mutate(yearq = as.Date(paste(year, case_when(nchar(quarter*3) == 1 ~ paste("0", quarter*3, sep = ""),
+                                       TRUE ~ as.character(quarter*3)), "01", sep = "-"))) %>%
+  group_by(sex, race, yearq) %>%
+  summarise(median_weekly_earn = median(median_weekly_earn),
+            n_persons          = sum(n_persons)) %>%
+  ungroup() %>%
+  mutate(agrupar = paste(sex, race, sep = "-"),
+         agrupar = case_when(agrupar == "Men-Black or African American" ~ "Men-Black/African",
+                             agrupar == "Women-Black or African American" ~ "Women-Black/African",
+                             TRUE ~ agrupar)) %>%
+  group_by(agrupar) %>%
+  timetk::plot_time_series(
+    .date_var    = yearq,
+    .value       = median_weekly_earn,
+    .color_var   = agrupar, 
+    .smooth      = FALSE,
+    .facet_ncol  = 3,
+    .line_size   = 0.8, 
+    .interactive = FALSE,
+    .legend_show = FALSE
+  ) +
+  ggtitle("Evolución Salario Mediano por Raza y Sexo") +
+  theme(plot.title = element_text(hjust = 0.5, margin = margin(b = 20)))
+```
+
+
+Clearly we can see an increasing trend for all races and sexes between 2010 and 2020, with a higher wage increase for Asians over the rest of the groups studied (for both sexes, both men and women). It is also interesting to comment that this growth has a practically linear behavior for white people (both men and women) while for both Asian and African/black people we observe greater fluctuations in the growth, not being so linear.
+
+```{r, warning=FALSE, message=FALSE}
+earn %>%
+  filter(sex != "Both Sexes") %>%
+  filter(ethnic_origin == "All Origins" & !is.na(age)) %>%
+  mutate(yearq = as.Date(paste(year, case_when(nchar(quarter*3) == 1 ~ paste("0", quarter*3, sep = ""),
+                                       TRUE ~ as.character(quarter*3)), "01", sep = "-"))) %>%
+  group_by(sex, race, yearq) %>%
+  summarise(median_weekly_earn = median(median_weekly_earn),
+            n_persons          = sum(n_persons)) %>%
+  ungroup() %>%
+  mutate(agrupar = paste(sex, race, sep = "-"),
+         agrupar = case_when(agrupar == "Men-Black or African American" ~ "Men-Black/African",
+                             agrupar == "Women-Black or African American" ~ "Women-Black/African",
+                             TRUE ~ agrupar)) %>%
+  group_by(agrupar) %>%
+  timetk::plot_time_series(
+    .date_var    = yearq,
+    .value       = n_persons,
+    .color_var   = agrupar, 
+    .smooth      = FALSE,
+    .facet_ncol  = 3,
+    .line_size   = 0.8, 
+    .interactive = FALSE,
+    .legend_show = FALSE
+  ) +
+  ggtitle("Evolución Personas Empleadas por Raza y Sexo") +
+  theme(plot.title = element_text(hjust = 0.5, margin = margin(b = 20)))
+```
+
+We can clearly see the effect of the COVID pandemic in the year 2020 where abrupt drops appear for all the groups analyzed due to the initial shock and then the beginning of the recovery is seen. It is also curious to see how the Asian falls have been less marked than those of the other groups (an interesting exercise would be to see what are the reasons behind the differences in these behaviors).
+
+## KMeans Implementation 🆒💎
+
+The first step will be to adapt the dataset to a format suitable for applying the KMeans algorithm:
+
+```{r, warning=FALSE, message=FALSE}
+earn_tidy <- earn %>%
+  mutate(median_weekly = cut(median_weekly_earn, 50)) %>%
+  group_by(sex, race,  median_weekly) %>%
+  summarise(n_persons = sum(n_persons)) %>%
+  select(sex, race, median_weekly, n_persons) %>%
+  pivot_wider(names_from = sex:race, values_from = n_persons, id_cols = median_weekly, values_fill = 0) %>%
+  janitor::clean_names() %>%
+  mutate(across(where(is.numeric), ~as.numeric(scale(.))))
+
+earn_tidy %>%
+  head() %>%
+  gt() %>%
+  tab_header(title = md("Datos Transformados Wider")) %>%
+  opt_align_table_header(align = "left")
+```
+
+We are going to try now with several numbers of clusters to see later according to the elbow rule which one is the best suited to our dataset. We also store in the tibble the information extracted from the `broom` package functions `tidy()`, `augment()` and `glance()`:
+
+```{r}
+kclusts <- tibble(k = 1:9) %>%
+  mutate(
+    kclust = map(k, ~kmeans(select(earn_tidy, -median_weekly), .x)),
+    tidied = map(kclust, tidy),
+    glanced = map(kclust, glance),
+    augmented = map(kclust, augment, select(earn_tidy, -median_weekly))
+  )
+
+kclusts
+```
+
+```{r, warning=FALSE, message=FALSE}
+clusters <- kclusts %>%
+  unnest(cols = c(tidied))
+
+clusters %>%
+  select(-c(kclust, glanced, augmented)) %>%
+  head() %>%
+  gt() %>%
+  tab_header(title = md("Información a nivel Cluster")) %>%
+  opt_align_table_header(align = "left")
+
+assignments <- kclusts %>% 
+  unnest(cols = c(augmented))
+
+assignments %>%
+  select(-c(kclust, tidied, glanced)) %>%
+  head() %>%
+  gt() %>%
+  tab_header(title = md("Dataset con Cluster Asignado")) %>%
+  opt_align_table_header(align = "left")
+
+clusterings <- kclusts %>%
+  unnest(cols = c(glanced))
+
+clusterings %>%
+  select(-c(kclust, tidied, augmented)) %>%
+  gt() %>%
+  tab_header(title = md("Información a nivel k"))
+
+```
+
+
+
+
+Let's explore some of the results below:
+
+```{r}
+p1 <- ggplot(assignments, aes(x = women_all_races, y = women_asian)) +
+  geom_point(aes(color = .cluster), alpha = 0.8) + 
+  facet_wrap(~ k) +
+  tidyquant::theme_tq() +
+  theme(legend.position = "right")
+
+p1 + geom_point(data = clusters, size = 6, shape = "x")
+```
+
+
+We can create a function to explore the combinations that interest us in a more comfortable way:
+
+```{r}
+explore_kmeans_results <- function(.assignments, .clusters,  .var1, .var2){
+  
+  p1 <- ggplot(.assignments, aes(x = {{.var1}}, y = {{.var2}})) +
+  geom_point(aes(color = .cluster), alpha = 0.8) + 
+  facet_wrap(~ k) +
+  tidyquant::theme_tq() +
+  theme(legend.position = "right")
+
+  p1 + geom_point(data = .clusters, size = 6, shape = "x")
+  
+}
+
+explore_kmeans_results(assignments, clusters, men_all_races, men_asian)
+```
+
+
+We can also see what is the appropriate number of clusters for this dataset using the famous elbow rule. For this we need to plot the intracluster variance per k value:
+
+```{r}
+ggplot(clusterings, aes(k, tot.withinss)) +
+  geom_line() +
+  geom_point() +
+  tidyquant::theme_tq() +
+  ggtitle("Número Óptimo de Clusters")
+```
+
+Although at no time do we have the characteristic elbow shape in my opinion possibly the most optimal number of clusters in this case is five.
+
+## Sources 📚
+
+- [X] [Getting started with k-means and #TidyTuesday employment status](https://juliasilge.com/blog/kmeans-employment/)
+
+- [X] [K-means clustering with tidy data principles](https://www.tidymodels.org/learn/statistics/k-means/)
+                  
+## Contact ✉
+
+Alberto Almuiña, [Linkedin](https://www.linkedin.com/in/alberto-almui%C3%B1a-b1176881/), [Twitter](https://twitter.com/AlmuinaAlberto), [Github](https://github.com/AlbertoAlmuinha), [Blog](https://albertoalmuinha.com/es/).

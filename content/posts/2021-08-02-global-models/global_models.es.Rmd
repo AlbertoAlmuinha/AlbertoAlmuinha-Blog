@@ -424,6 +424,21 @@ recipe_xgboost <- recipe(value ~ id + date + anomaly, data = training(splits)) %
     step_rm(matches("(xts$)|(iso$)|(^.pm)")) %>%
     step_zv(all_predictors()) %>%
     step_mutate(date_month = factor(date_month, ordered = TRUE)) %>%
+    step_lag(value, lag = 1:12) %>%
+    step_slidify_augment(
+      lag_6_value,
+      .f = ~mean(.x, na.rm = TRUE),
+      period = c(6, 6*2, 6*3, 6*4),
+      partial = TRUE,
+      align = "center"
+    ) %>%
+    step_slidify_augment(
+      lag_12_value,
+      .f = ~mean(.x, na.rm = TRUE),
+      period = c(12, 12*2, 12*3, 12*4),
+      partial = TRUE,
+      align = "center"
+    ) %>%
     step_rm(date) %>%
     step_dummy(all_nominal_predictors(), one_hot = TRUE)
 
@@ -479,6 +494,14 @@ recipe_prophet_catboost <- recipe(value ~ id + date + anomaly, data = training(s
     step_timeseries_signature(date) %>%
     step_rm(matches("(xts$)|(iso$)|(^.pm)")) %>%
     step_zv(all_predictors()) %>%
+    step_lag(value, lag = 12) %>%
+    step_slidify_augment(
+      lag_12_value,
+      .f = ~mean(.x, na.rm = TRUE),
+      period = c(12, 12*2, 12*3, 12*4),
+      partial = TRUE,
+      align = "center"
+    ) %>%
     step_mutate(date_month = factor(date_month, ordered = TRUE)) %>%
     step_dummy(all_nominal_predictors(), one_hot = TRUE)
 
