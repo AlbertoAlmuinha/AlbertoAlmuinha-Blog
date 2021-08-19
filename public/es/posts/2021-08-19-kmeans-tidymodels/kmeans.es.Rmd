@@ -10,7 +10,6 @@ categories:
   - Tidymodels
 ---
 
-
 ## Análisis de Datos Económicos: EEUU 📈 
 
 En este blog post analizaremos los datos correspondientes a la semana 9 de 2021 de `TidyTuesday` donde se ven los salarios medianos semanales y el número de personas empleadas por sexo, raza y edad a lo largo del tiempo (en concreto se analiza el período 2010-2020). Tenemos dos opciones para descargar los datos: la primera es utilizar el paquete `tidytuesdayR` pasando como argumento a la función principal la semana de los juegos de datos que deseamos descargar, mientras que la segunda opción es descargar los datos directamente desde el enlace en el que están alojados:

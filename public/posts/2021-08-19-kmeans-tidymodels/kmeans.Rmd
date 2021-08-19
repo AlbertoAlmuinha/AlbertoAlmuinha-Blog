@@ -10,7 +10,6 @@ categories:
   - Tidymodels
 ---
 
-
 ## Economic Data Analysis: USA 📈 
 
 In this blog post we will analyze the data corresponding to week 9 of 2021 from `TidyTuesday` where we see the median weekly wages and the number of people employed by gender, race and age over time (specifically the period 2010-2020 is analyzed). We have two options to download the data: the first is to use the `tidytuesdayR` package passing as argument to the main function the week of the datasets we want to download, while the second option is to download the data directly from the link where they are hosted:
