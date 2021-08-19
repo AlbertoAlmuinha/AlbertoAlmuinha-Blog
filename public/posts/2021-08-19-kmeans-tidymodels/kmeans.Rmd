@@ -3,7 +3,7 @@ title: "Tidytuesday, KMeans and Tidymodels"
 author: "Alberto Almuiña"
 date: '2021-08-19T02:13:14-05:00'
 description: An introduction to using Kmeans with Tidymodels
-slug: kmeans
+slug: kmeans-en
 tags:
   - kmeans
 categories: 
